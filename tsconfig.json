@@ -1,0 +1,3 @@
+{
+  "extends": "@agent_chatter_fd/config/tsconfig.base.json"
+}
