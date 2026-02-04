@@ -1,0 +1,216 @@
+/* CogniFlow Animations and Transitions */
+
+/* Smooth transitions for all interactive elements */
+.chat-transition {
+  transition: all 0.2s ease;
+}
+
+/* Message appearance animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Typing indicator animation */
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+.typing-dot {
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(3) { animation-delay: 0s; }
+
+/* Streaming text animation */
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.streaming-text {
+  animation: fadeInText 0.1s ease-in;
+}
+
+/* Button hover effects */
+@keyframes buttonHover {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.button-hover {
+  transition: transform 0.2s ease;
+}
+
+.button-hover:hover {
+  transform: scale(1.05);
+}
+
+/* Input focus glow */
+@keyframes inputGlow {
+  from {
+    box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+  }
+  to {
+    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+  }
+}
+
+.input-focus {
+  transition: box-shadow 0.2s ease;
+}
+
+.input-focus:focus {
+  animation: inputGlow 0.2s ease-out;
+}
+
+/* Error shake animation */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Success flash animation */
+@keyframes successFlash {
+  0% {
+    background-color: var(--ac-glow-green);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.success-flash {
+  animation: successFlash 0.5s ease-out;
+}
+
+/* Connection status pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.connection-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for chat container - Agent Chatter Theme */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ac-card-border);
+  border-radius: 4px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--ac-electric-violet);
+}
+
+/* Solid text helper */
+.gradient-text {
+  color: var(--ac-electric-violet);
+}
+
+/* Card hover glow effect */
+.card-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 30px var(--ac-electric-violet), 0 0 60px var(--ac-electric-violet);
+}
+
+/* Glow animation for active elements */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--ac-electric-violet), 0 0 10px var(--ac-electric-violet);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--ac-electric-violet), 0 0 40px var(--ac-neon-magenta);
+  }
+}
+
+.active-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Fade in up animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
