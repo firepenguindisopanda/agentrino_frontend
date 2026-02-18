@@ -46,7 +46,6 @@ export const colors = {
   // Status
   connected: '#10b981',
   connecting: '#f59e0b',
-  error: '#ef4444',
   disconnected: '#64748b',
 } as const;
 
