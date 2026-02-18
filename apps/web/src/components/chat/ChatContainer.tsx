@@ -27,7 +27,6 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
 
   const { isLoading } = useSelector((state: RootState) => state.ui);
 
-  // Auto-focus input on mount
   useEffect(() => {
     const input = document.querySelector('textarea') as HTMLTextAreaElement;
     input?.focus();
@@ -60,23 +59,28 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
   };
 
   return (
-    <div className={`flex flex-col h-full bg-[var(--ac-dark-void)] rounded-2xl border border-[var(--ac-card-border)] overflow-hidden shadow-2xl ${className}`}>
+    <div className={`flex flex-col h-full bg-card dark:bg-[var(--ac-card-bg)] rounded-2xl border border-border dark:border-[var(--ac-border-color)] overflow-hidden shadow-xl dark:shadow-2xl ${className}`}>
       {/* Chat Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-[var(--ac-card-border)] bg-[var(--ac-card-bg)] backdrop-blur-xl">
+      <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[var(--ac-electric-violet)] rounded-xl blur opacity-50" />
-            <div className="relative bg-[var(--ac-electric-violet)] p-2 rounded-xl">
+          <div className="relative hidden dark:block">
+            <div className="absolute inset-0 bg-[var(--ac-primary-blue)] rounded-xl blur opacity-50" />
+            <div className="relative bg-[var(--ac-primary-blue)] p-2 rounded-xl">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <div className="relative dark:hidden">
+            <div className="relative bg-[var(--ac-primary-blue)] p-2 rounded-xl">
               <Bot className="w-5 h-5 text-white" />
             </div>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-[var(--ac-pure-white)]">
+            <h2 className="text-lg font-semibold text-card-foreground dark:text-[var(--ac-text-primary)]">
               {agentName || 'AI Agent'}
             </h2>
             <div className="flex items-center gap-1.5 text-xs">
               {getConnectionIcon()}
-              <span className="text-[var(--ac-slate-gray)]">
+              <span className="text-muted-foreground dark:text-[var(--ac-text-secondary)]">
                 {getConnectionText()}
               </span>
             </div>
@@ -86,7 +90,7 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
         {messages.length > 0 && (
           <button
             onClick={clearChat}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--ac-slate-gray)] hover:text-[var(--ac-error)] bg-[var(--ac-input-bg)] hover:bg-[var(--ac-error)]/10 rounded-lg border border-[var(--ac-input-border)] hover:border-[var(--ac-error)]/30 transition-all duration-200"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)] hover:text-[var(--ac-error)] bg-muted dark:bg-[var(--ac-input-bg)] hover:bg-[var(--ac-error)]/10 rounded-lg border border-border dark:border-[var(--ac-input-border)] hover:border-[var(--ac-error)]/30 transition-all duration-200"
           >
             <Trash2 size={12} />
             Clear
@@ -99,7 +103,7 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
         <div className="bg-[var(--ac-error)]/10 border-l-4 border-[var(--ac-error)] px-4 py-3 mx-4 mt-4 rounded-r-lg">
           <div className="flex items-center gap-2">
             <AlertCircle size={16} className="text-[var(--ac-error)]" />
-            <span className="text-[var(--ac-pure-white)] text-sm">
+            <span className="text-sm text-card-foreground dark:text-[var(--ac-text-primary)]">
               {error}
             </span>
           </div>
@@ -125,9 +129,9 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
       />
 
       {/* Footer */}
-      <div className="flex-shrink-0 px-5 py-2.5 bg-[var(--ac-card-bg)] border-t border-[var(--ac-card-border)]">
-        <div className="flex items-center justify-center text-xs text-[var(--ac-slate-gray)]">
-          <span className="opacity-60">Press <kbd className="px-1.5 py-0.5 bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Shift + Enter</kbd> for new line</span>
+      <div className="flex-shrink-0 px-5 py-2.5 bg-card dark:bg-[var(--ac-card-bg)] border-t border-border dark:border-[var(--ac-border-color)]">
+        <div className="flex items-center justify-center text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)]">
+          <span className="opacity-60">Press <kbd className="px-1.5 py-0.5 bg-muted dark:bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-muted dark:bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Shift + Enter</kbd> for new line</span>
         </div>
       </div>
     </div>

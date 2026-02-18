@@ -1,4 +1,4 @@
-/* CogniFlow Animations and Transitions */
+/* SaaS Animations and Transitions */
 
 /* Smooth transitions for all interactive elements */
 .chat-transition {
@@ -54,15 +54,6 @@
 }
 
 /* Button hover effects */
-@keyframes buttonHover {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.05);
-  }
-}
-
 .button-hover {
   transition: transform 0.2s ease;
 }
@@ -71,13 +62,13 @@
   transform: scale(1.05);
 }
 
-/* Input focus glow */
+/* Input focus glow - blue */
 @keyframes inputGlow {
   from {
-    box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
   }
   to {
-    box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
   }
 }
 
@@ -109,7 +100,7 @@
 /* Success flash animation */
 @keyframes successFlash {
   0% {
-    background-color: var(--ac-glow-green);
+    background-color: var(--ac-success);
   }
   100% {
     background-color: transparent;
@@ -153,7 +144,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar for chat container - Agent Chatter Theme */
+/* Custom scrollbar for chat container - SaaS Theme */
 .chat-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
@@ -163,35 +154,35 @@ html {
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--ac-card-border);
+  background: var(--ac-border-color);
   border-radius: 4px;
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--ac-electric-violet);
+  background: var(--ac-primary-blue);
 }
 
 /* Solid text helper */
 .gradient-text {
-  color: var(--ac-electric-violet);
+  color: var(--ac-primary-blue);
 }
 
-/* Card hover glow effect */
+/* Card hover effect - subtle blue glow */
 .card-glow {
   transition: box-shadow 0.3s ease;
 }
 
 .card-glow:hover {
-  box-shadow: 0 0 30px var(--ac-electric-violet), 0 0 60px var(--ac-electric-violet);
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
 }
 
-/* Glow animation for active elements */
+/* Glow animation for active elements - blue */
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 5px var(--ac-electric-violet), 0 0 10px var(--ac-electric-violet);
+    box-shadow: 0 0 5px rgba(37, 99, 235, 0.4);
   }
   50% {
-    box-shadow: 0 0 20px var(--ac-electric-violet), 0 0 40px var(--ac-neon-magenta);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.6);
   }
 }
 

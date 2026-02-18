@@ -44,7 +44,6 @@ export function MessageInput({
     onCancel?.();
   };
 
-  // Auto-resize textarea
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -58,7 +57,7 @@ export function MessageInput({
   }, [value]);
 
   return (
-    <div className={`flex-shrink-0 flex items-end gap-3 p-4 border-t border-[var(--ac-card-border)] bg-[var(--ac-card-bg)] backdrop-blur-xl ${className}`}>
+    <div className={`flex-shrink-0 flex items-end gap-3 p-4 border-t border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl ${className}`}>
       <div className="flex-1 relative">
         <textarea
           ref={textareaRef}
@@ -67,13 +66,13 @@ export function MessageInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full resize-none rounded-xl border border-[var(--ac-input-border)] bg-[var(--ac-input-bg)] px-4 py-3 text-[var(--ac-pure-white)] placeholder-[var(--ac-slate-gray)] focus:border-[var(--ac-input-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ac-electric-violet)]/20 disabled:opacity-50 disabled:cursor-not-allowed chat-transition input-focus min-h-[48px] max-h-[120px]"
+          className="w-full resize-none rounded-xl border border-border dark:border-[var(--ac-input-border)] bg-background dark:bg-[var(--ac-input-bg)] px-4 py-3 text-foreground dark:text-[var(--ac-text-primary)] placeholder:text-muted-foreground dark:placeholder:[var(--ac-text-muted)] focus:border-[var(--ac-primary-blue)] dark:focus:border-[var(--ac-input-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ac-primary-blue)]/20 dark:focus:ring-[var(--ac-primary-blue)]/20 disabled:opacity-50 disabled:cursor-not-allowed chat-transition input-focus min-h-[48px] max-h-[120px]"
           rows={1}
         />
 
         {/* Character count indicator */}
         {value.length > 500 && (
-          <div className="absolute -top-6 right-0 text-xs text-[var(--ac-warm-orange)]">
+          <div className="absolute -top-6 right-0 text-xs text-[var(--ac-warning)]">
             {value.length}/2000
           </div>
         )}
@@ -83,7 +82,7 @@ export function MessageInput({
         {isStreaming && onCancel && (
           <button
             onClick={handleCancel}
-            className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-error)] text-white hover:bg-red-500 button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--ac-error)]/20"
+            className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-error)] text-white hover:bg-red-500 button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             title="Cancel streaming"
           >
             <Square size={16} />
@@ -93,7 +92,7 @@ export function MessageInput({
         <button
           onClick={handleSend}
           disabled={!value.trim() || disabled}
-          className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-electric-violet)] text-white hover:bg-[var(--ac-glow-purple)] button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg shadow-[var(--ac-electric-violet)]/30"
+          className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
           title="Send message (Enter)"
         >
           <Send size={16} />

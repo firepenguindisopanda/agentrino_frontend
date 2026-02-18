@@ -17,7 +17,6 @@ interface MessageListProps {
 export function MessageList({ messages, isStreaming, className = '' }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
@@ -27,13 +26,13 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
       {messages.length === 0 ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--ac-electric-violet)] mb-4 shadow-lg shadow-[var(--ac-electric-violet)]/30">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--ac-primary-blue)] mb-4 shadow-lg shadow-[var(--ac-primary-blue)]/30">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-xl font-semibold text-[var(--ac-pure-white)] mb-2">
+            <h3 className="text-xl font-semibold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2">
               Ready to Chat
             </h3>
-            <p className="text-[var(--ac-slate-gray)] text-sm leading-relaxed">
+            <p className="text-muted-foreground dark:text-[var(--ac-text-secondary)] text-sm leading-relaxed">
               Ask me anything! I&apos;m here to help with questions, ideas, or just conversation.
             </p>
           </div>
@@ -47,8 +46,8 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
             {/* Avatar */}
             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
               message.role === 'user'
-                ? 'bg-[var(--ac-electric-violet)]'
-                : 'bg-[var(--ac-cyber-cyan)]'
+                ? 'bg-[var(--ac-primary-blue)]'
+                : 'bg-[var(--ac-accent-blue)]'
             }`}>
               {message.role === 'user' ? (
                 <User className="w-4 h-4 text-white" />
@@ -62,19 +61,19 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
               className={`max-w-[75%] rounded-2xl px-4 py-3 chat-transition ${
                 message.role === 'user'
                   ? 'bg-[var(--ac-user-message-bg)] border border-[var(--ac-user-message-border)] text-[var(--ac-user-text)]'
-                  : 'bg-[var(--ac-assistant-message-bg)] border border-[var(--ac-assistant-message-border)] text-[var(--ac-assistant-text)]'
+                  : 'bg-muted dark:bg-[var(--ac-assistant-message-bg)] border border-border dark:border-[var(--ac-assistant-message-border)] text-card-foreground dark:text-[var(--ac-assistant-text)]'
               }`}
             >
               {message.isStreaming ? (
                 <StreamingMessage message={message} />
               ) : (
-                <div className="message-enter prose prose-invert prose-sm max-w-none">
+                <div className="message-enter prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                     {message.content}
                   </ReactMarkdown>
                 </div>
               )}
-              <div className="text-[10px] text-[var(--ac-slate-gray)] mt-2 opacity-60">
+              <div className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-muted)] mt-2 opacity-60">
                 {new Date(message.timestamp).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -87,10 +86,10 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
 
       {isStreaming && (
         <div className="flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ac-cyber-cyan)]">
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ac-accent-blue)]">
             <Bot className="w-4 h-4 text-white" />
           </div>
-          <div className="bg-[var(--ac-assistant-message-bg)] border border-[var(--ac-assistant-message-border)] rounded-2xl px-4 py-3">
+          <div className="bg-muted dark:bg-[var(--ac-assistant-message-bg)] border border-border dark:border-[var(--ac-assistant-message-border)] rounded-2xl px-4 py-3">
             <TypingIndicator />
           </div>
         </div>

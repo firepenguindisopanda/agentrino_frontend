@@ -6,93 +6,110 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0.01 250);
+  --foreground: oklch(0.2 0.01 250);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0.01 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
+  --popover-foreground: oklch(0.2 0.01 250);
+  --primary: oklch(0.55 0.2 250);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.01 250);
+  --secondary-foreground: oklch(0.2 0.01 250);
+  --muted: oklch(0.95 0.01 250);
+  --muted-foreground: oklch(0.55 0.01 250);
+  --accent: oklch(0.95 0.01 250);
+  --accent-foreground: oklch(0.2 0.01 250);
+  --destructive: oklch(0.55 0.18 25);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.9 0.01 250);
+  --ring: oklch(0.55 0.2 250);
+  --chart-1: oklch(0.55 0.2 250);
+  --chart-2: oklch(0.5 0.18 260);
+  --chart-3: oklch(0.45 0.15 270);
+  --chart-4: oklch(0.4 0.12 280);
+  --chart-5: oklch(0.35 0.1 290);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.95 0.01 250);
+  --sidebar-foreground: oklch(0.2 0.01 250);
+  --sidebar-primary: oklch(0.55 0.2 250);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.01 250);
+  --sidebar-accent-foreground: oklch(0.2 0.01 250);
+  --sidebar-border: oklch(0.9 0.01 250);
+  --sidebar-ring: oklch(0.55 0.2 250);
 }
 
-/* Agent Chatter Brand Colors */
+/* SaaS Theme */
 :root {
-  /* Primary Gradient Colors */
-  --ac-dark-void: #0a0a0f;
-  --ac-cosmic-purple: #1a1025;
-  --ac-deep-indigo: #15132b;
-  --ac-electric-violet: #8b5cf6;
-  --ac-neon-magenta: #d946ef;
-  --ac-cyber-cyan: #06b6d4;
-  
-  /* Accent Colors */
-  --ac-glow-purple: #a855f7;
-  --ac-glow-pink: #ec4899;
-  --ac-glow-blue: #3b82f6;
-  --ac-glow-green: #22c55e;
-  --ac-warm-orange: #f97316;
-  
-  /* Neutral Palette */
-  --ac-pure-white: #ffffff;
-  --ac-snow-white: #f8fafc;
-  --ac-silver-mist: #cbd5e1;
-  --ac-slate-gray: #64748b;
-  --ac-charcoal: #1e293b;
-  
-  /* Message Colors */
-  --ac-user-message-bg: rgba(139, 92, 246, 0.15);
-  --ac-user-message-border: rgba(139, 92, 246, 0.3);
-  --ac-assistant-message-bg: rgba(6, 182, 212, 0.1);
-  --ac-assistant-message-border: rgba(6, 182, 212, 0.2);
+  --ac-primary-blue: #2563eb;
+  --ac-primary-hover: #1d4ed8;
+  --ac-primary-light: #3b82f6;
+
+  --ac-dark-bg: #0f172a;
+  --ac-card-bg: #1e293b;
+  --ac-border-color: #334155;
+
+  --ac-light-bg: #f8fafc;
+  --ac-light-card-bg: #ffffff;
+  --ac-light-border-color: #e2e8f0;
+
+  --ac-accent-blue: #0ea5e9;
+  --ac-success: #10b981;
+  --ac-warning: #f59e0b;
+  --ac-error: #ef4444;
+
+  --ac-text-primary: #f1f5f9;
+  --ac-text-secondary: #94a3b8;
+  --ac-text-muted: #64748b;
+
+  --ac-light-text-primary: #1e293b;
+  --ac-light-text-secondary: #475569;
+
+  --ac-user-message-bg: rgba(37, 99, 235, 0.15);
+  --ac-user-message-border: rgba(37, 99, 235, 0.3);
+  --ac-assistant-message-bg: rgba(14, 165, 233, 0.1);
+  --ac-assistant-message-border: rgba(14, 165, 233, 0.2);
   --ac-user-text: #f1f5f9;
   --ac-assistant-text: #e2e8f0;
-  
-  /* UI Elements */
-  --ac-card-bg: rgba(30, 27, 50, 0.6);
-  --ac-card-border: rgba(139, 92, 246, 0.2);
-  --ac-card-hover-border: rgba(139, 92, 246, 0.5);
-  --ac-input-bg: rgba(15, 15, 25, 0.8);
+
+  --ac-input-bg: rgba(15, 23, 42, 0.8);
   --ac-input-border: rgba(100, 116, 139, 0.3);
-  --ac-input-focus-border: #8b5cf6;
-  --ac-button-primary: #8b5cf6;
-  --ac-button-hover: #a855f7;
-  
-  /* Status */
-  --ac-connected: #22c55e;
+  --ac-input-focus-border: #2563eb;
+
+  --ac-connected: #10b981;
   --ac-connecting: #f59e0b;
   --ac-error: #ef4444;
-  --ac-disconnected: #6b7280;
+  --ac-disconnected: #64748b;
 }
 
 .dark {
-  --ac-user-message-bg: rgba(139, 92, 246, 0.15);
-  --ac-assistant-message-bg: rgba(6, 182, 212, 0.1);
-  --ac-input-bg: rgba(15, 15, 25, 0.8);
+  --background: oklch(0.12 0.02 250);
+  --foreground: oklch(0.92 0.01 250);
+  --card: oklch(0.15 0.02 250);
+  --card-foreground: oklch(0.92 0.01 250);
+  --popover: oklch(0.15 0.02 250);
+  --popover-foreground: oklch(0.92 0.01 250);
+  --primary: oklch(0.6 0.22 250);
+  --primary-foreground: oklch(0.95 0.01 250);
+  --secondary: oklch(0.18 0.02 250);
+  --secondary-foreground: oklch(0.92 0.01 250);
+  --muted: oklch(0.18 0.02 250);
+  --muted-foreground: oklch(0.6 0.02 250);
+  --accent: oklch(0.2 0.04 250);
+  --accent-foreground: oklch(0.92 0.01 250);
+  --destructive: oklch(0.55 0.18 25);
+  --border: oklch(0.25 0.02 250);
+  --input: oklch(0.25 0.02 250);
+  --ring: oklch(0.6 0.22 250);
+  --sidebar: oklch(0.15 0.02 250);
+  --sidebar-foreground: oklch(0.92 0.01 250);
+  --sidebar-primary: oklch(0.6 0.22 250);
+  --sidebar-primary-foreground: oklch(0.95 0.01 250);
+  --sidebar-accent: oklch(0.18 0.02 250);
+  --sidebar-accent-foreground: oklch(0.92 0.01 250);
+  --sidebar-border: oklch(0.25 0.02 250);
+  --sidebar-ring: oklch(0.6 0.22 250);
 }
 
 @theme inline {

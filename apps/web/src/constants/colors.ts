@@ -1,57 +1,53 @@
-// Agent Chatter Brand Color Palette
-// A modern, vibrant theme for AI agent conversations
+// SaaS Theme for Agentrino - Clean, Professional
 export const colors = {
-  // Primary Gradient Colors
-  darkVoid: '#0a0a0f',
-  cosmicPurple: '#1a1025',
-  deepIndigo: '#15132b',
-  electricViolet: '#8b5cf6',
-  neonMagenta: '#d946ef',
-  cyberCyan: '#06b6d4',
+  // Primary Brand Colors
+  primaryBlue: '#2563eb',
+  primaryHover: '#1d4ed8',
+  primaryLight: '#3b82f6',
+
+  // Dark Backgrounds
+  darkBg: '#0f172a',
+  cardBg: '#1e293b',
+  borderColor: '#334155',
+
+  // Light Backgrounds
+  lightBg: '#f8fafc',
+  lightCardBg: '#ffffff',
+  lightBorderColor: '#e2e8f0',
 
   // Accent Colors
-  glowPurple: '#a855f7',
-  glowPink: '#ec4899',
-  glowBlue: '#3b82f6',
-  glowGreen: '#22c55e',
-  warmOrange: '#f97316',
+  accentBlue: '#0ea5e9',
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
 
-  // Neutral Palette
-  pureWhite: '#ffffff',
-  snowWhite: '#f8fafc',
-  silverMist: '#cbd5e1',
-  slateGray: '#64748b',
-  charcoal: '#1e293b',
+  // Text Colors
+  textPrimary: '#f1f5f9',
+  textSecondary: '#94a3b8',
+  textMuted: '#64748b',
 
-  // Message-Specific Colors
-  userMessageBg: 'rgba(139, 92, 246, 0.15)',
-  userMessageBorder: 'rgba(139, 92, 246, 0.3)',
-  assistantMessageBg: 'rgba(6, 182, 212, 0.1)',
-  assistantMessageBorder: 'rgba(6, 182, 212, 0.2)',
+  // Light mode text
+  lightTextPrimary: '#1e293b',
+  lightTextSecondary: '#475569',
+
+  // Message Colors
+  userMessageBg: 'rgba(37, 99, 235, 0.15)',
+  userMessageBorder: 'rgba(37, 99, 235, 0.3)',
+  assistantMessageBg: 'rgba(14, 165, 233, 0.1)',
+  assistantMessageBorder: 'rgba(14, 165, 233, 0.2)',
   userText: '#f1f5f9',
   assistantText: '#e2e8f0',
 
   // UI Elements
-  cardBg: 'rgba(30, 27, 50, 0.6)',
-  cardBorder: 'rgba(139, 92, 246, 0.2)',
-  cardHoverBorder: 'rgba(139, 92, 246, 0.5)',
-  inputBg: 'rgba(15, 15, 25, 0.8)',
+  inputBg: 'rgba(15, 23, 42, 0.8)',
   inputBorder: 'rgba(100, 116, 139, 0.3)',
-  inputFocusBorder: '#8b5cf6',
-  buttonPrimary: '#8b5cf6',
-  buttonHover: '#a855f7',
-  buttonActive: '#7c3aed',
+  inputFocusBorder: '#2563eb',
 
-  // Status Colors
-  connected: '#22c55e',
+  // Status
+  connected: '#10b981',
   connecting: '#f59e0b',
   error: '#ef4444',
-  disconnected: '#6b7280',
-
-  // Shadows and Glows
-  glowShadow: 'rgba(139, 92, 246, 0.4)',
-  darkShadow: 'rgba(0, 0, 0, 0.3)',
-  overlay: 'rgba(10, 10, 15, 0.9)',
+  disconnected: '#64748b',
 } as const;
 
 export type ColorKey = keyof typeof colors;
