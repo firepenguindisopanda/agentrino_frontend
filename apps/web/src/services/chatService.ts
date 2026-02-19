@@ -13,7 +13,12 @@ export interface Agent {
 export interface Conversation {
   id: string;
   agent_id: string;
+  session_id: string;
   title: string | null;
+  is_archived: boolean;
+  last_activity_at: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Message {
@@ -36,11 +41,49 @@ export async function getAgents(): Promise<Agent[]> {
 /**
  * Create a new conversation with an agent
  */
-export async function createConversation(agentId: string): Promise<Conversation> {
+export async function createConversation(agentId: string, sessionId: string): Promise<Conversation> {
   const response = await apiClient.post<Conversation>('/conversations', {
     agent_id: agentId,
+    session_id: sessionId,
   });
   return response.data;
+}
+
+/**
+ * Get existing conversation or create new one for session + agent
+ */
+export async function getOrCreateConversation(agentId: string, sessionId: string): Promise<Conversation> {
+  const response = await apiClient.post<Conversation>('/conversations/get-or-create', {
+    agent_id: agentId,
+    session_id: sessionId,
+  });
+  return response.data;
+}
+
+/**
+ * List all conversations for a session
+ */
+export async function listConversations(sessionId: string, includeArchived = false): Promise<Conversation[]> {
+  const response = await apiClient.get<Conversation[]>('/conversations', {
+    params: { session_id: sessionId, include_archived: includeArchived },
+  });
+  return response.data;
+}
+
+/**
+ * Archive a conversation (soft delete)
+ */
+export async function archiveConversation(conversationId: string): Promise<Conversation> {
+  const response = await apiClient.patch<Conversation>(`/conversations/${conversationId}/archive`);
+  return response.data;
+}
+
+/**
+ * Permanently delete a conversation
+ */
+export async function deleteConversation(conversationId: string): Promise<boolean> {
+  const response = await apiClient.delete<{ deleted: boolean }>(`/conversations/${conversationId}`);
+  return response.data.deleted;
 }
 
 /**
