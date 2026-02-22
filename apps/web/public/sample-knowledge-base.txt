@@ -1,0 +1,37 @@
+Agentrino Knowledge Base - Sample Document
+============================================
+
+About Agentrino
+---------------
+Agentrino is an AI-powered travel assistant that helps users plan their trips, discover destinations, and get travel recommendations. The application uses multiple AI agents specialized in different travel domains.
+
+Destinations
+------------
+1. Paris, France - The City of Light, known for the Eiffel Tower, Louvre Museum, and romantic atmosphere.
+2. Tokyo, Japan - A fascinating blend of ancient temples and cutting-edge technology.
+3. New York City, USA - The Big Apple, famous for Times Square, Central Park, and Broadway shows.
+4. Bali, Indonesia - A tropical paradise known for its beaches, temples, and rice terraces.
+5. Rome, Italy - The Eternal City, home to the Colosseum, Vatican City, and incredible Italian cuisine.
+
+Travel Tips
+------------
+- Always check visa requirements before traveling internationally
+- Book flights at least 2-3 months in advance for the best prices
+- Use local transportation apps when visiting new cities
+- Learn a few basic phrases in the local language
+- Keep copies of important documents digitally stored
+
+Currency Information
+--------------------
+- Euro (EUR) - France, Italy, and most of Western Europe
+- Japanese Yen (JPY) - Japan
+- US Dollar (USD) - United States
+- Indonesian Rupiah (IDR) - Indonesia
+
+Best Time to Visit
+------------------
+- Paris: April to June, September to November
+- Tokyo: March to May, September to November
+- New York: April to June, September to November
+- Bali: April to October (dry season)
+- Rome: April to June, September to October

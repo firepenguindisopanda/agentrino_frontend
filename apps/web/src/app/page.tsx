@@ -8,14 +8,6 @@ import { getSessionId } from '@/lib/session';
 import { Loader2, MessageSquare, ArrowRight, Bot, Sparkles, Trash2, FolderOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 
 const MAX_CONVERSATIONS = 10;
 
@@ -142,60 +134,75 @@ export default function Home() {
         {/* Manage Chats Button */}
         {conversations.length > 0 && (
           <div className="flex justify-center mb-8">
-            <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-[var(--ac-border-color)] dark:border-[var(--ac-border-color)]">
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Manage Chats ({activeCount}/{MAX_CONVERSATIONS})
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                  <DialogTitle>Manage Your Chats</DialogTitle>
-                  <DialogDescription>
-                    You have {activeCount} active chat{activeCount !== 1 ? 's' : ''}. Delete old chats to start new ones.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="max-h-[400px] overflow-y-auto space-y-2 mt-4">
-                  {conversations.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No chats yet</p>
-                  ) : (
-                    conversations.map((conv) => {
-                      const agent = agents.find((a) => a.id === conv.agent_id);
-                      return (
-                        <div
-                          key={conv.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-card dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)]"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">
-                              {agent?.name || 'Unknown Agent'}
-                              {conv.is_archived && <span className="text-muted-foreground text-sm ml-2">(Archived)</span>}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Last activity: {new Date(conv.last_activity_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteConversation(conv.id)}
-                            disabled={deletingId === conv.id}
-                            className="text-muted-foreground hover:text-[var(--ac-error)]"
-                          >
-                            {deletingId === conv.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
+            <Button 
+              variant="outline" 
+              className="border-[var(--ac-border-color)] dark:border-[var(--ac-border-color)]"
+              onClick={() => setManageDialogOpen(true)}
+            >
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Manage Chats ({activeCount}/{MAX_CONVERSATIONS})
+            </Button>
+          </div>
+        )}
+
+        {/* Manage Chats Modal */}
+        {manageDialogOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+              onClick={() => setManageDialogOpen(false)}
+            />
+            <div className="relative z-10 w-full max-w-[500px] bg-background dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)] rounded-lg shadow-lg p-6">
+              <div className="flex flex-col space-y-1.5 text-center sm:text-left mb-4">
+                <h2 className="text-lg font-semibold leading-none tracking-tight">Manage Your Chats</h2>
+                <p className="text-sm text-muted-foreground">
+                  You have {activeCount} active chat{activeCount !== 1 ? 's' : ''}. Delete old chats to start new ones.
+                </p>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto space-y-2">
+                {conversations.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No chats yet</p>
+                ) : (
+                  conversations.map((conv) => {
+                    const agent = agents.find((a) => a.id === conv.agent_id);
+                    return (
+                      <div
+                        key={conv.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-card dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)]"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {agent?.name || 'Unknown Agent'}
+                            {conv.is_archived && <span className="text-muted-foreground text-sm ml-2">(Archived)</span>}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Last activity: {new Date(conv.last_activity_at).toLocaleDateString()}
+                          </p>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteConversation(conv.id)}
+                          disabled={deletingId === conv.id}
+                          className="text-muted-foreground hover:text-[var(--ac-error)]"
+                        >
+                          {deletingId === conv.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button variant="outline" onClick={() => setManageDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 
