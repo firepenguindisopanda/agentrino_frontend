@@ -15,6 +15,7 @@ import {
   setError,
   clearError,
   clearMessages,
+  setMessageRagMetadata,
   type ChatMessage,
 } from '@/store/slices/chatSlice';
 import { setLoading, setConnectionStatus } from '@/store/slices/uiSlice';
@@ -169,10 +170,18 @@ export function useChat() {
             flushBuffer();
           }
         },
-        onDone: () => {
-          // flush remaining buffer before finalizing
+        onDone: (ragMetadata) => {
           flushBuffer();
           dispatch(finalizeStreamingMessage(messageId));
+          
+          if (ragMetadata?.rag_used) {
+            dispatch(setMessageRagMetadata({
+              id: messageId,
+              usedRag: ragMetadata.rag_used,
+              ragDocsCount: ragMetadata.rag_docs_count,
+            }));
+          }
+          
           dispatch(setLoading(false));
           dispatch(setConnectionStatus('connected'));
         },

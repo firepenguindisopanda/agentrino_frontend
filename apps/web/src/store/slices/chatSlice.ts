@@ -4,9 +4,10 @@ export interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
-  // ISO timestamp string (serializable in Redux store)
   timestamp: string;
   isStreaming?: boolean;
+  usedRag?: boolean;
+  ragDocsCount?: number;
 }
 
 export interface ChatState {
@@ -50,6 +51,13 @@ const chatSlice = createSlice({
       state.isStreaming = false;
       state.currentStreamingId = null;
     },
+    setMessageRagMetadata: (state, action: PayloadAction<{ id: string; usedRag: boolean; ragDocsCount: number }>) => {
+      const message = state.messages.find(m => m.id === action.payload.id);
+      if (message) {
+        message.usedRag = action.payload.usedRag;
+        message.ragDocsCount = action.payload.ragDocsCount;
+      }
+    },
     startStreaming: (state, action: PayloadAction<string>) => {
       state.isStreaming = true;
       state.currentStreamingId = action.payload;
@@ -80,6 +88,7 @@ export const {
   setError,
   clearError,
   clearMessages,
+  setMessageRagMetadata,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

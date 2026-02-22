@@ -1,9 +1,14 @@
 export type OnDelta = (deltaText: string) => void;
 
+export interface RagMetadata {
+  rag_used: boolean;
+  rag_docs_count: number;
+}
+
 export interface StreamOptions {
   signal?: AbortSignal;
   onDelta: OnDelta;
-  onDone?: () => void;
+  onDone?: (ragMetadata?: RagMetadata) => void;
   onError?: (err: Error) => void;
 }
 
@@ -57,7 +62,15 @@ export async function parseStream(
         }
 
         if (event === 'done') {
-          onDone?.();
+          let ragMetadata: RagMetadata | undefined;
+          if (data) {
+            try {
+              ragMetadata = JSON.parse(data);
+            } catch {
+              // ignore parse error for done event
+            }
+          }
+          onDone?.(ragMetadata);
           return;
         }
 

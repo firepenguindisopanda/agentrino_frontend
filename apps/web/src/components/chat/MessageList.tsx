@@ -73,11 +73,19 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
                   </ReactMarkdown>
                 </div>
               )}
-              <div className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-muted)] mt-2 opacity-60">
-                {new Date(message.timestamp).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+              <div className="flex items-center gap-2 mt-2">
+                {message.role === 'assistant' && message.usedRag && (
+                  <div className="flex items-center gap-1 text-[10px] text-[var(--ac-success)] bg-[var(--ac-success)]/10 px-1.5 py-0.5 rounded">
+                    <Sparkles className="w-3 h-3" />
+                    <span>{message.ragDocsCount} docs</span>
+                  </div>
+                )}
+                <div className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-muted)] opacity-60">
+                  {new Date(message.timestamp).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
               </div>
             </div>
           </div>
