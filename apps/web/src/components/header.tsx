@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { MessageCircle, Sparkles } from "lucide-react";
+import { MessageCircle, Bot } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 
@@ -10,13 +10,7 @@ export default function Header() {
       <div className="flex flex-row items-center justify-between px-6 py-3">
         {/* Logo & Brand */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative hidden dark:block">
-            <div className="absolute inset-0 bg-[var(--ac-primary-blue)] rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative bg-[var(--ac-primary-blue)] p-2.5 rounded-xl">
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-          </div>
-          <div className="relative dark:hidden">
+          <div className="relative">
             <div className="relative bg-[var(--ac-primary-blue)] p-2.5 rounded-xl">
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
@@ -26,7 +20,7 @@ export default function Header() {
               Agentrino
             </span>
             <span className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-secondary)] -mt-0.5 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> AI Conversations
+              <Bot className="w-3 h-3" /> AI Conversations
             </span>
           </div>
         </Link>

@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { StreamingMessage } from './StreamingMessage';
 import { TypingIndicator } from './TypingIndicator';
-import { Bot, User, Sparkles } from 'lucide-react';
+import { Bot, User, Gem, BookOpen } from 'lucide-react';
 import type { ChatMessage } from '@/store/slices/chatSlice';
 
 interface MessageListProps {
@@ -27,7 +27,7 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
         <div className="flex items-center justify-center h-full">
           <div className="text-center max-w-md">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--ac-primary-blue)] mb-4 shadow-lg shadow-[var(--ac-primary-blue)]/30">
-              <Sparkles className="w-8 h-8 text-white" />
+              <Gem className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-xl font-semibold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2">
               Ready to Chat
@@ -76,7 +76,7 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
               <div className="flex items-center gap-2 mt-2">
                 {message.role === 'assistant' && message.usedRag && (
                   <div className="flex items-center gap-1 text-[10px] text-[var(--ac-success)] bg-[var(--ac-success)]/10 px-1.5 py-0.5 rounded">
-                    <Sparkles className="w-3 h-3" />
+                    <BookOpen className="w-3 h-3" />
                     <span>{message.ragDocsCount} docs</span>
                   </div>
                 )}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { getAgents, getOrCreateConversation, listConversations, deleteConversation, type Agent, type Conversation } from '@/services/chatService';
 import { getSessionId } from '@/lib/session';
-import { Loader2, MessageSquare, ArrowRight, Bot, Sparkles, Trash2, FolderOpen } from 'lucide-react';
+import { Loader2, MessageSquare, ArrowRight, Bot, Trash2, FolderOpen, Gem } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -111,10 +111,10 @@ export default function Home() {
         {/* Hero Section */}
         <header className="text-center mb-16 pt-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border dark:bg-[var(--ac-card-bg)] dark:border-[var(--ac-border-color)] mb-6">
-            <Sparkles className="w-4 h-4 text-[var(--ac-primary-blue)]" />
+            <Bot className="w-4 h-4 text-[var(--ac-primary-blue)]" />
             <span className="text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)]">Powered by AI</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
             <span className="text-foreground dark:text-[var(--ac-text-primary)]">
               Choose Your
@@ -124,18 +124,34 @@ export default function Home() {
               AI Agent
             </span>
           </h1>
-          
+
           <p className="text-lg md:text-xl text-muted-foreground dark:text-[var(--ac-text-secondary)] max-w-2xl mx-auto leading-relaxed">
-            Each agent specializes in different areas. Select one to start a conversation 
+            Each agent specializes in different areas. Select one to start a conversation
             tailored to your needs.
           </p>
+
+          {/* Oracle CTA */}
+          <div className="mt-10">
+            <Button
+              onClick={() => router.push('/oracle')}
+              className="relative overflow-hidden bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white font-semibold px-8 py-6 rounded-xl shadow-lg shadow-[var(--ac-primary-blue)]/25 transition-all duration-300 hover:shadow-[var(--ac-primary-blue)]/40"
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                <Gem className="w-5 h-5" />
+                Consult Oracle
+              </span>
+            </Button>
+            <p className="mt-3 text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)]">
+              Get comparative analysis for architecture decisions
+            </p>
+          </div>
         </header>
 
         {/* Manage Chats Button */}
         {conversations.length > 0 && (
           <div className="flex justify-center mb-8">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="border-[var(--ac-border-color)] dark:border-[var(--ac-border-color)]"
               onClick={() => setManageDialogOpen(true)}
             >
@@ -148,8 +164,8 @@ export default function Home() {
         {/* Manage Chats Modal */}
         {manageDialogOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setManageDialogOpen(false)}
             />
             <div className="relative z-10 w-full max-w-[500px] bg-background dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)] rounded-lg shadow-lg p-6">
@@ -208,26 +224,23 @@ export default function Home() {
 
         {/* Agent Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.map((agent, index) => {
+          {agents.filter((a) => a.name !== 'Oracle').map((agent, index) => {
             const existingConv = getConversationForAgent(agent.id);
             return (
-              <Card 
-                key={agent.id} 
+              <Card
+                key={agent.id}
                 className="group relative bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl border-border dark:border-[var(--ac-border-color)] hover:border-[var(--ac-primary-blue)] dark:hover:border-[var(--ac-primary-blue)] transition-all duration-300 hover:shadow-xl dark:hover:shadow-[var(--ac-primary-blue)]/20 overflow-hidden cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => handleStartChat(agent)}
               >
                 {/* Hover Glow - dark mode only */}
                 <div className="absolute inset-0 bg-[var(--ac-primary-blue)]/0 dark:group-hover:bg-[var(--ac-primary-blue)]/5 transition-all duration-300" />
-                
+
                 <CardHeader className="relative">
                   <div className="flex items-center justify-between mb-4">
                     {/* Agent Avatar */}
                     <div className="relative">
-                      <div 
-                        className="absolute inset-0 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity dark:block hidden"
-                        style={{ backgroundColor: agent.color || '#2563eb' }}
-                      />
+                      {/* Icon container without glow overlay */}
                       <div
                         className="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
                         style={{ backgroundColor: agent.color || '#2563eb' }}
@@ -235,19 +248,19 @@ export default function Home() {
                         <Bot className="w-7 h-7 text-white" />
                       </div>
                     </div>
-                    
+
                     <MessageSquare className="w-5 h-5 text-muted-foreground dark:text-[var(--ac-text-secondary)] group-hover:text-[var(--ac-primary-blue)] transition-colors duration-300" />
                   </div>
-                  
+
                   <CardTitle className="text-2xl font-bold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2 group-hover:text-[var(--ac-primary-blue)] transition-colors">
                     {agent.name}
                   </CardTitle>
-                  
+
                   <CardDescription className="text-muted-foreground dark:text-[var(--ac-text-secondary)] line-clamp-3 leading-relaxed">
                     {agent.description || 'Ready to assist you with specialized knowledge and expertise.'}
                   </CardDescription>
                 </CardHeader>
-                
+
                 <CardFooter className="relative pt-0">
                   <Button
                     className="w-full relative overflow-hidden bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white font-semibold shadow-lg transition-all duration-300 group/btn"

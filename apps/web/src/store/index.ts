@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from './slices/chatSlice';
 import uiReducer from './slices/uiSlice';
+import oracleReducer from './slices/oracleSlice';
 
 export const store = configureStore({
   reducer: {
     chat: chatReducer,
     ui: uiReducer,
+    oracle: oracleReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

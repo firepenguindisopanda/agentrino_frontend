@@ -139,10 +139,36 @@ export async function sendStreamingChatMessage(
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    await apiClient.get('/agents'); 
+    await apiClient.get('/agents');
     return true;
   } catch (error) {
     console.error('Connection test failed:', error);
     return false;
   }
+}
+
+export interface OracleAnalysisOption {
+  title: string;
+  description: string;
+  pros: string[];
+  cons: string[];
+  effort: string;
+  recommended: boolean;
+}
+
+export interface OracleAnalysisResponse {
+  bottom_line: string;
+  options: OracleAnalysisOption[];
+  action_plan: string[];
+  watch_out_for: string[];
+}
+
+/**
+ * Fetch a structured 4-option comparative architecture analysis from the Oracle agent
+ */
+export async function analyzeWithOracle(prompt: string, signal?: AbortSignal): Promise<OracleAnalysisResponse> {
+  const response = await apiClient.post<OracleAnalysisResponse>('/agents/oracle/analyze', {
+    content: prompt,
+  }, { signal });
+  return response.data;
 }

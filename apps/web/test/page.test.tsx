@@ -73,8 +73,8 @@ vi.mock('lucide-react', () => ({
   Bot: ({ className }: { className?: string }) => (
     <div data-testid="bot-icon" className={className}>Bot</div>
   ),
-  Sparkles: ({ className }: { className?: string }) => (
-    <div data-testid="sparkles-icon" className={className}>Sparkles</div>
+  Gem: ({ className }: { className?: string }) => (
+    <div data-testid="gem-icon" className={className}>Gem</div>
   ),
 }));
 

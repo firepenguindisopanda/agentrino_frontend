@@ -77,11 +77,14 @@ vi.mock('lucide-react', () => ({
   User: ({ className }: { className?: string }) => (
     <div data-testid="user-icon" className={className}>User</div>
   ),
+  Gem: ({ className }: { className?: string }) => (
+    <div data-testid="gem-icon" className={className}>Gem</div>
+  ),
+  BookOpen: ({ className }: { className?: string }) => (
+    <div data-testid="bookopen-icon" className={className}>Book</div>
+  ),
   Trash2: ({ size: _size }: { size?: number }) => (
     <div data-testid="trash-icon">Trash</div>
-  ),
-  Sparkles: ({ className }: { className?: string }) => (
-    <div data-testid="sparkles-icon" className={className}>Sparkles</div>
   ),
 }));
 

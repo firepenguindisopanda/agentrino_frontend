@@ -63,8 +63,7 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
       {/* Chat Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="relative hidden dark:block">
-            <div className="absolute inset-0 bg-[var(--ac-primary-blue)] rounded-xl blur opacity-50" />
+          <div className="relative">
             <div className="relative bg-[var(--ac-primary-blue)] p-2 rounded-xl">
               <Bot className="w-5 h-5 text-white" />
             </div>
