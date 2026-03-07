@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { OracleOption } from '@/store/slices/oracleSlice';
+import type { OracleOption } from '@/store/slices/oracleSlice';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, Zap, Star } from 'lucide-react';
 import { clsx } from 'clsx';
