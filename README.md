@@ -1,9 +1,11 @@
 # agent_chatter_fd
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/7b4c7b65ad8b427a94d60a49346329ed" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
-
 <p align="center">
-  <a href="https://www.loom.com/share/7b4c7b65ad8b427a94d60a49346329ed">Watch on Loom →</a>
+  <a href="https://www.loom.com/share/7b4c7b65ad8b427a94d60a49346329ed">
+    <img src="https://cdn.loom.com/sessions/thumbnails/7b4c7b65ad8b427a94d60a49346329ed-e938a48219ff9dbf-full-play.gif" alt="Agentrino - Watch Video" width="100%" style="max-width: 700px;">
+  </a>
+  <br>
+  <a href="https://www.loom.com/share/7b4c7b65ad8b427a94d60a49346329ed">Watch on Loom</a>
 </p>
 
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, and more.
