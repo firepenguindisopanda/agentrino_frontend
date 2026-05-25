@@ -1,5 +1,11 @@
 # agent_chatter_fd
 
+<p align="center">
+  <a href="https://www.loom.com/share/7b4c7b65ad8b427a94d60a49346329ed">
+    <img style="max-width:600px; width:100%;" src="https://cdn.loom.com/sessions/thumbnails/7b4c7b65ad8b427a94d60a49346329ed-e938a48219ff9dbf-full-play.gif" alt="Agentrino - Watch Video">
+  </a>
+</p>
+
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, and more.
 
 ## Features
