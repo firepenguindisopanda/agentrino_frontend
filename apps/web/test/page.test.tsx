@@ -6,6 +6,7 @@ import Home from '@/app/page';
 import chatReducer from '@/store/slices/chatSlice';
 import uiReducer from '@/store/slices/uiSlice';
 import * as chatService from '@/services/chatService';
+import { toast } from 'sonner';
 import { vi } from 'vitest';
 
 // Mock next/navigation
@@ -20,6 +21,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/services/chatService', () => ({
   getAgents: vi.fn(),
   createConversation: vi.fn(),
+  getOrCreateConversation: vi.fn(),
+  listConversations: vi.fn(() => Promise.resolve([])),
+  deleteConversation: vi.fn(() => Promise.resolve(true)),
+}));
+
+// Mock sonner toast
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
 }));
 
 // Mock UI components
@@ -192,7 +201,7 @@ describe('Home Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('bot-icon')).toBeInTheDocument(); // Bot icon is used for all agents
+        expect(screen.getAllByTestId('bot-icon')[0]).toBeInTheDocument(); // Bot icon is used for all agents
       });
     });
 
@@ -208,7 +217,7 @@ describe('Home Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('bot-icon')).toBeInTheDocument(); // Bot icon is used for all agents
+        expect(screen.getAllByTestId('bot-icon')[0]).toBeInTheDocument(); // Bot icon is used for all agents
       });
     });
   });
@@ -224,7 +233,7 @@ describe('Home Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load agents. Is the backend running?')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load data. Is the backend running?')).toBeInTheDocument();
       });
     });
 
@@ -260,7 +269,7 @@ describe('Home Page', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load agents. Is the backend running?')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load data. Is the backend running?')).toBeInTheDocument();
       });
 
       // Click retry button
@@ -283,7 +292,7 @@ describe('Home Page', () => {
     it('should navigate to chat page when Start Chat is clicked', async () => {
       const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
-      vi.mocked(chatService.createConversation).mockResolvedValue(mockConversation);
+      vi.mocked(chatService.getOrCreateConversation).mockResolvedValue(mockConversation);
 
       render(
         <Provider store={createMockStore()}>
@@ -307,7 +316,7 @@ describe('Home Page', () => {
 
       // Wait for navigation
       await waitFor(() => {
-        expect(chatService.createConversation).toHaveBeenCalledWith('agent-1');
+        expect(chatService.getOrCreateConversation).toHaveBeenCalledWith('agent-1', expect.any(String));
       });
 
       await waitFor(() => {
@@ -320,7 +329,7 @@ describe('Home Page', () => {
     it('should show loading state when starting a chat', async () => {
       const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
-      vi.mocked(chatService.createConversation).mockImplementation(() => 
+      vi.mocked(chatService.getOrCreateConversation).mockImplementation(() =>
         new Promise((resolve) => setTimeout(() => resolve(mockConversation), 100))
       );
 
@@ -353,7 +362,7 @@ describe('Home Page', () => {
     it('should disable all Start Chat buttons while one is loading', async () => {
       const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
-      vi.mocked(chatService.createConversation).mockImplementation(() => 
+      vi.mocked(chatService.getOrCreateConversation).mockImplementation(() =>
         new Promise((resolve) => setTimeout(() => resolve(mockConversation), 100))
       );
 
@@ -379,8 +388,10 @@ describe('Home Page', () => {
 
       // All buttons should be disabled
       await waitFor(() => {
-        const allButtons = screen.getAllByTestId('button');
-        allButtons.forEach(btn => {
+        const startButtons = screen.getAllByTestId('button').filter(btn =>
+          btn.textContent?.includes('Start Chat') || btn.textContent?.includes('Starting')
+        );
+        startButtons.forEach(btn => {
           expect(btn).toBeDisabled();
         });
       });
@@ -388,7 +399,7 @@ describe('Home Page', () => {
 
     it('should handle conversation creation error gracefully', async () => {
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
-      vi.mocked(chatService.createConversation).mockRejectedValue(new Error('Failed to create'));
+      vi.mocked(chatService.getOrCreateConversation).mockRejectedValue(new Error('Failed to create'));
 
       // Mock console.error to prevent error output in test
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -413,9 +424,9 @@ describe('Home Page', () => {
         fireEvent.click(firstStartButton);
       }
 
-      // Wait for error to be logged
+      // Wait for the error toast to be shown
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalled();
+        expect(vi.mocked(toast.error)).toHaveBeenCalled();
       });
 
       // Buttons should be re-enabled after error
