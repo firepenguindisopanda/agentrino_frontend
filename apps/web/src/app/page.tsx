@@ -188,11 +188,11 @@ export default function Home() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">
-                            {agent?.name || 'Unknown Agent'}
+                            {conv.title || agent?.name || 'Unknown Agent'}
                             {conv.is_archived && <span className="text-muted-foreground text-sm ml-2">(Archived)</span>}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Last activity: {new Date(conv.last_activity_at).toLocaleDateString()}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {agent?.name || 'Unknown Agent'} &middot; {new Date(conv.last_activity_at).toLocaleDateString()}
                           </p>
                         </div>
                         <Button
