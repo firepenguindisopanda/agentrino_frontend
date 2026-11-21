@@ -8,112 +8,141 @@ import { StreamingMessage } from './StreamingMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { CodeBlock } from './CodeBlock';
 import { CopyButton } from './CopyButton';
-import { Bot, User, Gem, BookOpen } from 'lucide-react';
+import { Bot, Gem, BookOpen } from 'lucide-react';
 import type { ChatMessage } from '@/store/slices/chatSlice';
 
 interface MessageListProps {
   messages: ChatMessage[];
   isStreaming: boolean;
   className?: string;
+  agentName?: string | null;
+  /** Starter prompts shown in the empty state; selecting one fills the composer. */
+  suggestions?: string[];
+  onSuggestion?: (text: string) => void;
 }
 
-export function MessageList({ messages, isStreaming, className = '' }: MessageListProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+/** Distance from the bottom (px) within which we keep following new content. */
+const FOLLOW_THRESHOLD = 120;
 
+export function MessageList({
+  messages,
+  isStreaming,
+  className = '',
+  agentName,
+  suggestions = [],
+  onSuggestion,
+}: MessageListProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const followRef = useRef(true);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    followRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_THRESHOLD;
+  };
+
+  // Follow new content only while the reader is at the bottom, so scrolling up
+  // to re-read an earlier answer isn't hijacked by the stream.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (followRef.current) endRef.current?.scrollIntoView?.({ block: 'end' });
   }, [messages, isStreaming]);
 
+  // An assistant turn that failed before producing any text has nothing to show.
+  const visible = messages.filter((m) => m.role === 'user' || m.isStreaming || m.content);
+  const lastIsEmptyStream = visible.at(-1)?.isStreaming && !visible.at(-1)?.content;
+
   return (
-    <div className={`flex-1 min-h-0 overflow-y-auto chat-scrollbar p-4 space-y-4 ${className}`}>
-      {messages.length === 0 ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--ac-primary-blue)] mb-4 shadow-lg shadow-[var(--ac-primary-blue)]/30">
-              <Gem className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2">
-              Ready to Chat
-            </h3>
-            <p className="text-muted-foreground dark:text-[var(--ac-text-secondary)] text-sm leading-relaxed">
+    <div
+      ref={scrollRef}
+      onScroll={onScroll}
+      className={`chat-scrollbar min-h-0 flex-1 overflow-y-auto ${className}`}
+    >
+      <div className="mx-auto flex min-h-full max-w-3xl flex-col px-4 py-6 sm:px-6" role="log" aria-label="Conversation" aria-live="off">
+        {visible.length === 0 ? (
+          <div className="m-auto max-w-md py-10 text-center">
+            <span className="mb-4 inline-flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
+              <Gem className="size-6" />
+            </span>
+            <h3 className="mb-1.5 text-lg font-semibold">Ready to Chat</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Ask me anything! I&apos;m here to help with questions, ideas, or just conversation.
             </p>
-          </div>
-        </div>
-      ) : (
-        messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-          >
-            {/* Avatar */}
-            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-              message.role === 'user'
-                ? 'bg-[var(--ac-primary-blue)]'
-                : 'bg-[var(--ac-accent-blue)]'
-            }`}>
-              {message.role === 'user' ? (
-                <User className="w-4 h-4 text-white" />
-              ) : (
-                <Bot className="w-4 h-4 text-white" />
-              )}
-            </div>
-            
-            {/* Message Bubble */}
-            <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 chat-transition ${
-                message.role === 'user'
-                  ? 'bg-[var(--ac-user-message-bg)] border border-[var(--ac-user-message-border)] text-[var(--ac-user-text)]'
-                  : 'bg-muted dark:bg-[var(--ac-assistant-message-bg)] border border-border dark:border-[var(--ac-assistant-message-border)] text-card-foreground dark:text-[var(--ac-assistant-text)]'
-              }`}
-            >
-              {message.isStreaming ? (
-                <StreamingMessage message={message} />
-              ) : (
-                <div className="message-enter prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeSanitize, rehypeHighlight]}
-                    components={{ pre: CodeBlock }}
+            {suggestions.length > 0 && onSuggestion && (
+              <div className="mt-6 flex flex-col gap-2">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => onSuggestion(s)}
+                    className="rounded-lg border border-border bg-card px-3.5 py-2.5 text-left text-sm text-foreground shadow-xs outline-none transition-colors hover:border-border-strong hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
-              )}
-              <div className="flex items-center gap-2 mt-2">
-                {message.role === 'assistant' && message.usedRag && (
-                  <div className="flex items-center gap-1 text-[10px] text-[var(--ac-success)] bg-[var(--ac-success)]/10 px-1.5 py-0.5 rounded">
-                    <BookOpen className="w-3 h-3" />
-                    <span>{message.ragDocsCount} docs</span>
-                  </div>
-                )}
-                {message.role === 'assistant' && !message.isStreaming && message.content && (
-                  <CopyButton text={message.content} />
-                )}
-                <div className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-muted)] opacity-60">
-                  {new Date(message.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
+                    {s}
+                  </button>
+                ))}
               </div>
-            </div>
+            )}
           </div>
-        ))
-      )}
+        ) : (
+          <ol className="space-y-6">
+            {visible.map((message) =>
+              message.role === 'user' ? (
+                <li key={message.id} className="message-enter flex justify-end">
+                  <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-foreground shadow-xs">
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                  </div>
+                </li>
+              ) : message.isStreaming && !message.content ? null : (
+                <li key={message.id} className="message-enter group flex gap-3">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground" aria-hidden="true">
+                    <Bot className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="sr-only">{agentName || 'Assistant'} said:</p>
+                    {message.isStreaming ? (
+                      <div className="text-[15px] leading-relaxed text-foreground">
+                        <StreamingMessage message={message} />
+                      </div>
+                    ) : (
+                      <div className="prose prose-sm max-w-none text-[15px] leading-relaxed text-foreground dark:prose-invert prose-headings:font-semibold prose-a:text-primary-ink">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+                          components={{ pre: CodeBlock }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                    <div className="mt-1.5 flex items-center gap-2 text-[11px] text-subtle-foreground">
+                      {message.usedRag && (
+                        <span className="inline-flex items-center gap-1 rounded bg-good-soft px-1.5 py-0.5 font-medium text-good">
+                          <BookOpen className="size-3" />
+                          {message.ragDocsCount} docs
+                        </span>
+                      )}
+                      {!message.isStreaming && message.content && <CopyButton text={message.content} />}
+                      <time dateTime={message.timestamp} className="tabular">
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </time>
+                    </div>
+                  </div>
+                </li>
+              )
+            )}
+          </ol>
+        )}
 
-      {isStreaming && (
-        <div className="flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--ac-accent-blue)]">
-            <Bot className="w-4 h-4 text-white" />
+        {isStreaming && (lastIsEmptyStream || visible.length === 0) && (
+          <div className="mt-6 flex gap-3">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground" aria-hidden="true">
+              <Bot className="size-4" />
+            </span>
+            <TypingIndicator className="pt-1" />
           </div>
-          <div className="bg-muted dark:bg-[var(--ac-assistant-message-bg)] border border-border dark:border-[var(--ac-assistant-message-border)] rounded-2xl px-4 py-3">
-            <TypingIndicator />
-          </div>
-        </div>
-      )}
-
-      <div ref={messagesEndRef} />
+        )}
+        <div ref={endRef} />
+      </div>
     </div>
   );
 }

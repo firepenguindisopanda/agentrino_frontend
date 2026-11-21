@@ -27,12 +27,12 @@
     transform: translateY(0);
   }
   30% {
-    transform: translateY(-10px);
+    transform: translateY(-3px); opacity: 0.5;
   }
 }
 
 .typing-dot {
-  animation: typing 1.4s infinite ease-in-out;
+  animation: typing 1.2s infinite ease-in-out;
 }
 
 .typing-dot:nth-child(1) { animation-delay: -0.32s; }

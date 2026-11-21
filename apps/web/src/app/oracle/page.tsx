@@ -1,31 +1,75 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useOracleChat } from '@/components/hooks/useOracleChat';
 import { ComparativeAnalysis } from '@/components/oracle/ComparativeAnalysis';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Gem, RotateCcw, MessageSquare, ArrowRight, Info } from 'lucide-react';
+import { MAX_MESSAGE_CHARS } from '@/components/chat/MessageInput';
+import { ArrowUp, Gem, Layers, Database, GitBranch, Loader2, RotateCcw, X } from 'lucide-react';
 
 const EXAMPLE_QUESTIONS = [
   {
-    title: 'Architecture Decision',
+    title: 'Architecture decision',
+    icon: Layers,
     question: 'Should I use microservices or a monolith for my new SaaS application?',
   },
   {
-    title: 'Tech Stack',
+    title: 'Tech stack',
+    icon: Database,
     question: 'What database should I use for a real-time chat application with millions of users?',
   },
   {
-    title: 'Code Review',
+    title: 'Refactoring strategy',
+    icon: GitBranch,
     question: 'I have a complex refactoring task. What approach would minimize risk while improving code quality?',
   },
 ];
 
+/** What the Oracle is doing, phrased by elapsed time (the call can take up to 60s). */
+function phaseFor(seconds: number) {
+  if (seconds < 4) return 'Reading your question';
+  if (seconds < 12) return 'Retrieving relevant knowledge';
+  if (seconds < 30) return 'Weighing four alternatives';
+  return 'Drafting the action plan';
+}
+
+function AnalysisSkeleton({ onCancel }: { onCancel: () => void }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const started = Date.now();
+    const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <div className="space-y-4" aria-busy="true" aria-live="polite">
+      <div className="surface flex items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-medium">{phaseFor(elapsed)}…</p>
+            <p className="tabular text-xs text-muted-foreground">{elapsed}s elapsed · usually 10 to 40s</p>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          <X />
+          Cancel
+        </Button>
+      </div>
+      <div className="h-28 animate-pulse rounded-xl bg-muted" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-32 animate-pulse rounded-xl bg-muted" style={{ animationDelay: `${i * 120}ms` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function OraclePage() {
-  const router = useRouter();
   const [question, setQuestion] = useState('');
+  const [asked, setAsked] = useState<string[]>([]);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const {
     bottomLine,
     options,
@@ -37,269 +81,194 @@ export default function OraclePage() {
     followUpMode,
     submitQuestion,
     askFollowUp,
+    cancel,
     reset,
   } = useOracleChat();
 
-  // Focus textarea on load
   useEffect(() => {
-    const textarea = document.querySelector('textarea');
-    textarea?.focus();
+    inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = async () => {
-    if (!question.trim()) return;
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+  }, [question]);
 
-    if (followUpMode) {
-      await askFollowUp(question);
-    } else {
-      await submitQuestion(question);
-    }
+  const handleSubmit = async () => {
+    const q = question.trim();
+    if (!q || isLoading) return;
+    setAsked((prev) => [...prev, q]);
     setQuestion('');
+    if (followUpMode) await askFollowUp(q);
+    else await submitQuestion(q);
   };
 
-  const handleExampleClick = (exampleQuestion: string) => {
-    setQuestion(exampleQuestion);
+  const handleReset = () => {
+    reset();
+    setAsked([]);
+    setQuestion('');
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSubmit();
     }
   };
 
+
+  const showIntro = !hasSubmitted && !isLoading;
+  const latestQuestion = asked.at(-1);
+
+  // One composer, placed by state: above the examples before the first
+  // analysis, and below the results afterwards so the answer reads first.
+  const composer = (
+    <div className="surface p-2 shadow-card focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+      <label htmlFor="oracle-question" className="sr-only">
+        {followUpMode ? 'Ask a follow-up question' : 'Describe your challenge'}
+      </label>
+      <textarea
+        id="oracle-question"
+        ref={inputRef}
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        onKeyDown={handleKeyDown}
+        maxLength={MAX_MESSAGE_CHARS}
+        rows={followUpMode ? 1 : 3}
+        disabled={isLoading}
+        placeholder={
+          followUpMode
+            ? 'Ask a follow-up, e.g. "What if the team is only two engineers?"'
+            : 'Describe the decision you are facing, with any constraints: team size, scale, deadline, existing stack…'
+        }
+        className="block max-h-60 w-full resize-none bg-transparent px-3 py-2.5 text-[15px] leading-6 outline-none placeholder:text-subtle-foreground disabled:opacity-60"
+      />
+      <div className="flex items-center justify-between gap-3 px-2 pb-1 pt-1">
+        <span className="hidden text-[11px] text-subtle-foreground sm:inline">
+          <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to submit ·{' '}
+          <kbd className="rounded border border-border bg-muted px-1 font-sans">Shift + Enter</kbd> for new line
+        </span>
+        <Button onClick={handleSubmit} disabled={!question.trim() || isLoading} size="sm" className="ml-auto">
+          {isLoading ? <Loader2 className="animate-spin" /> : followUpMode ? <ArrowUp /> : <Gem />}
+          {isLoading ? 'Analyzing...' : followUpMode ? 'Ask follow-up' : 'Get analysis'}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="h-full flex flex-col bg-background dark:bg-[var(--ac-dark-bg)]">
-      {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)]">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            {/* simple solid icon container, no glow */}
-            <div className="relative bg-[var(--ac-primary-blue)] p-2.5 rounded-xl">
-              <Gem className="w-5 h-5 text-white" />
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl space-y-6 px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-card">
+              <Gem className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Oracle</h1>
+              <p className="text-sm text-muted-foreground">
+                Strategic technical advisor: four alternatives, honest trade-offs, one recommendation.
+              </p>
             </div>
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-card-foreground dark:text-[var(--ac-text-primary)]">
-              Oracle
-            </h1>
-            <p className="text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-              Strategic Technical Advisor
-            </p>
-          </div>
-          
-          {hasSubmitted && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={reset}
-              className="gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              New Analysis
+          {(hasSubmitted || error) && (
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RotateCcw />
+              New analysis
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/')}
-            className="gap-2"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180" />
-            Back
-          </Button>
-        </div>
-      </div>
+        </header>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Question Input - Always visible until analysis is shown */}
-          {!hasSubmitted && (
-            <Card className="p-4 space-y-4">
-              <div>
-                <label
-                  htmlFor="oracle-question"
-                  className="text-sm font-medium text-card-foreground dark:text-[var(--ac-text-primary)] mb-2 block"
+        {asked.length > 0 && (
+          <ol aria-label="Questions in this analysis" className="space-y-1.5">
+            {asked.map((q, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className="eyebrow mt-0.5 shrink-0">{i === 0 ? 'Asked' : 'Follow-up'}</span>
+                <span className={i === asked.length - 1 ? 'text-foreground' : 'text-muted-foreground'}>{q}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {!hasSubmitted && composer}
+
+        {showIntro && !error && (
+          <section aria-labelledby="examples-heading">
+            <h2 id="examples-heading" className="eyebrow mb-3">
+              Try an example
+            </h2>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {EXAMPLE_QUESTIONS.map(({ title, icon: Icon, question: q }) => (
+                <button
+                  key={title}
+                  type="button"
+                  onClick={() => {
+                    setQuestion(q);
+                    inputRef.current?.focus();
+                  }}
+                  className="surface group flex flex-col gap-2 p-4 text-left outline-none transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-card focus-visible:ring-2 focus-visible:ring-ring/60"
                 >
-                  Describe your challenge
-                </label>
-                <textarea
-                  id="oracle-question"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    followUpMode
-                      ? 'Ask a follow-up question...'
-                      : 'Describe your architecture challenge, technical problem, or decision you\'re facing. For example: "Should I use microservices or a monolith for my new SaaS application?"'
-                  }
-                  className="w-full min-h-[120px] p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--ac-primary-blue)] focus:border-transparent dark:bg-[var(--ac-input-bg)] dark:border-[var(--ac-input-border)] dark:text-[var(--ac-text-primary)] dark:placeholder:text-[var(--ac-text-secondary)]"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-                  <Info className="w-4 h-4" />
-                  <span>Press Enter to submit, Shift+Enter for new line</span>
-                </div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!question.trim() || isLoading}
-                  className="bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Gem className="w-4 h-4" />
-                      Get Analysis
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Example Questions - Shown before submission */}
-          {!hasSubmitted && !question && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)] text-center">
-                Or try one of these examples:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {EXAMPLE_QUESTIONS.map((example, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleExampleClick(example.question)}
-                    className="p-4 text-left rounded-lg border border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] hover:border-[var(--ac-primary-blue)]/50 hover:bg-[var(--ac-primary-blue)]/5 transition-all group"
-                    disabled={isLoading}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-[var(--ac-primary-blue)]" />
-                      <span className="text-sm font-medium text-card-foreground dark:text-[var(--ac-text-primary)]">
-                        {example.title}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)] line-clamp-2">
-                      {example.question}
-                    </p>
-                  </button>
-                ))}
-              </div>
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <Icon className="size-4 text-primary-ink" aria-hidden="true" />
+                    {title}
+                  </span>
+                  <span className="text-[13px] leading-relaxed text-muted-foreground">{q}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </section>
+        )}
 
-          {/* Follow-up Input - Shown after initial analysis */}
-          {hasSubmitted && (
-            <Card className="p-4">
-              <div className="flex gap-3">
-                <textarea
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask a follow-up question..."
-                  className="flex-1 min-h-[60px] p-3 rounded-lg border border-input bg-background resize-none focus:outline-none focus:ring-2 focus:ring-[var(--ac-primary-blue)] focus:border-transparent dark:bg-[var(--ac-input-bg)] dark:border-[var(--ac-input-border)] dark:text-[var(--ac-text-primary)] dark:placeholder:text-[var(--ac-text-secondary)]"
-                  disabled={isLoading}
-                />
+        {isLoading && <AnalysisSkeleton onCancel={cancel} />}
+
+        {error && !isLoading && (
+          <div role="alert" className="surface border-critical/30 bg-critical-soft p-4">
+            <p className="text-sm font-medium text-foreground">{error}</p>
+            <div className="mt-3 flex gap-2">
+              {latestQuestion && (
                 <Button
-                  onClick={handleSubmit}
-                  disabled={!question.trim() || isLoading}
-                  className="bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white self-end gap-2"
+                  size="sm"
+                  onClick={() => {
+                    setAsked((prev) => prev.slice(0, -1));
+                    setQuestion(latestQuestion);
+                    inputRef.current?.focus();
+                  }}
                 >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <MessageSquare className="w-4 h-4" />
-                  )}
+                  Edit and retry
                 </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Loading Skeleton */}
-          {isLoading && (
-            <div className="space-y-6 animate-pulse">
-              {/* Hero skeleton */}
-              <div className="rounded-xl p-6 border border-[var(--ac-primary-blue)]/20 bg-[var(--ac-primary-blue)]/5">
-                <div className="h-4 w-32 bg-[var(--ac-primary-blue)]/20 rounded mb-3" />
-                <div className="h-5 w-full bg-muted rounded mb-2" />
-                <div className="h-5 w-3/4 bg-muted rounded" />
-              </div>
-
-              {/* 4-card grid skeleton */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border dark:border-[var(--ac-border-color)] p-5 space-y-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded bg-muted" />
-                      <div className="h-5 w-40 bg-muted rounded" />
-                    </div>
-                    <div className="h-4 w-full bg-muted rounded" />
-                    <div className="h-4 w-2/3 bg-muted rounded" />
-                    <div className="h-6 w-24 bg-muted rounded-md" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Action plan skeleton */}
-              <div className="rounded-lg border border-border dark:border-[var(--ac-border-color)] p-5 space-y-3">
-                <div className="h-5 w-28 bg-muted rounded" />
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-6 w-6 rounded-full bg-[var(--ac-primary-blue)]/20" />
-                    <div className="h-4 flex-1 bg-muted rounded" />
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)] text-center">
-                Oracle is analyzing your question...
-              </p>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !isLoading && (
-            <Card className="border-red-500/30 bg-red-500/10 p-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={reset}
-                className="mt-3"
-              >
-                Try Again
+              )}
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                Start over
               </Button>
-            </Card>
-          )}
+            </div>
+          </div>
+        )}
 
-          {/* Results - Comparative Analysis */}
-          {hasSubmitted && !isLoading && !error && options.length > 0 && (
-            <ComparativeAnalysis
-              bottomLine={bottomLine}
-              options={options}
-              actionPlan={actionPlan}
-              watchOutFor={watchOutFor}
-            />
-          )}
+        {hasSubmitted && !isLoading && !error && options.length > 0 && (
+          <ComparativeAnalysis
+            question={asked[0]}
+            bottomLine={bottomLine}
+            options={options}
+            actionPlan={actionPlan}
+            watchOutFor={watchOutFor}
+          />
+        )}
 
-          {/* Empty State - No options returned */}
-          {hasSubmitted && !isLoading && !error && options.length === 0 && (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-                No analysis results returned. Please try rephrasing your question.
-              </p>
-            </Card>
-          )}
-        </div>
+        {hasSubmitted && !isLoading && !error && options.length === 0 && (
+          <p className="surface p-8 text-center text-sm text-muted-foreground">
+            No analysis results returned. Please try rephrasing your question.
+          </p>
+        )}
+
+        {hasSubmitted && (
+          <section aria-label="Follow-up">
+            <h2 className="eyebrow mb-2">Refine this analysis</h2>
+            {composer}
+          </section>
+        )}
       </div>
     </div>
   );

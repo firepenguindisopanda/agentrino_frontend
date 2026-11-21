@@ -38,6 +38,30 @@ describe('streamParser', () => {
   };
 
   describe('parseStream', () => {
+    it('surfaces a server error event with its message and does not report done', async () => {
+      const chunks = [
+        'data: {"text": "partial"}\n\n',
+        'event: error\ndata: {"error": "The model failed while generating a reply.", "request_id": "abc"}\n\n',
+      ];
+      mockResponse = createMockResponse(createMockStream(chunks));
+
+      await parseStream(mockResponse, { onDelta: onDeltaMock, onDone: onDoneMock, onError: onErrorMock });
+
+      expect(onDeltaMock).toHaveBeenCalledWith('partial');
+      expect(onErrorMock).toHaveBeenCalledTimes(1);
+      expect(onErrorMock.mock.calls[0][0].message).toBe('The model failed while generating a reply.');
+      expect(onDoneMock).not.toHaveBeenCalled();
+    });
+
+    it('passes RAG metadata from the done event', async () => {
+      const chunks = ['data: {"text": "hi"}\n\n', 'event: done\ndata: {"done": true, "rag_used": true, "rag_docs_count": 3}\n\n'];
+      mockResponse = createMockResponse(createMockStream(chunks));
+
+      await parseStream(mockResponse, { onDelta: onDeltaMock, onDone: onDoneMock, onError: onErrorMock });
+
+      expect(onDoneMock).toHaveBeenCalledWith(expect.objectContaining({ rag_used: true, rag_docs_count: 3 }));
+    });
+
     it('should parse single SSE event with text data', async () => {
       const chunks = ['data: {"text": "Hello"}\n\n'];
       mockResponse = createMockResponse(createMockStream(chunks));

@@ -1,285 +1,207 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import axios from "axios";
 import { toast } from "sonner";
-import {
-  adminService,
-  type UploadResponse,
-  type DocumentStats,
-} from "@/services/adminService";
+import { adminService, SESSION_EVENT, type SessionEndReason } from "@/services/adminService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgentManager } from "@/components/admin/AgentManager";
-import { Loader2, Upload, FileText, Trash2, Lock } from "lucide-react";
+import { KnowledgeBase } from "@/components/admin/KnowledgeBase";
+import { SystemDashboard } from "@/components/admin/SystemDashboard";
+import { Activity, Bot, Database, Loader2, Lock, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function AdminPage() {
-  const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+type Tab = "overview" | "knowledge" | "agents";
+
+const TABS: { id: Tab; label: string; icon: typeof Activity }[] = [
+  { id: "overview", label: "Overview", icon: Activity },
+  { id: "knowledge", label: "Knowledge base", icon: Database },
+  { id: "agents", label: "Agents", icon: Bot },
+];
+
+function loginErrorMessage(err: unknown): string {
+  const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+  if (status === 401) return "Invalid password";
+  if (status === 429) {
+    const retry = Number(axios.isAxiosError(err) ? err.response?.headers["retry-after"] : NaN);
+    const minutes = Number.isFinite(retry) && retry > 0 ? Math.ceil(retry / 60) : null;
+    return minutes
+      ? `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`
+      : "Too many failed attempts. Try again later.";
+  }
+  if (status === 503) return "Admin access isn't configured on the server.";
+  if (status === 422) return "That password is too long.";
+  return "Couldn't reach the server. Try again.";
+}
+
+function LoginForm() {
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(true);
   const [loggingIn, setLoggingIn] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [stats, setStats] = useState<DocumentStats | null>(null);
-  const [lastUpload, setLastUpload] = useState<UploadResponse | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const auth = adminService.isAuthenticated();
-    setIsAuthenticated(auth);
-    if (auth) {
-      loadStats();
-    }
-    setLoading(false);
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      const data = await adminService.getDocumentStats();
-      setStats(data);
-    } catch (err) {
-      console.error(err);
-      adminService.clearAdminPassword();
-      setIsAuthenticated(false);
-      toast.error("Session expired. Please login again.");
-    }
-  };
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
-      toast.error("Please enter a password");
+      setError("Please enter a password");
       return;
     }
-
     setLoggingIn(true);
+    setError(null);
     try {
       await adminService.login(password);
-      adminService.setAdminPassword(password);
-      setIsAuthenticated(true);
-      toast.success("Logged in successfully");
-      loadStats();
+      setPassword("");
+      toast.success("Signed in");
     } catch (err) {
-      console.error(err);
-      toast.error("Invalid password");
+      setError(loginErrorMessage(err));
     } finally {
       setLoggingIn(false);
     }
   };
 
-  const handleLogout = () => {
-    adminService.clearAdminPassword();
-    setIsAuthenticated(false);
-    setStats(null);
-    toast.success("Logged out");
+  return (
+    <div className="flex h-full items-center justify-center overflow-y-auto p-4">
+      <div className="surface w-full max-w-sm p-6 shadow-card">
+        <span className="mb-4 flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary-ink">
+          <Lock className="size-5" aria-hidden="true" />
+        </span>
+        <h1 className="text-lg font-semibold">Admin sign in</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Monitor the system, manage the knowledge base and configure agents.
+        </p>
+        <form onSubmit={handleLogin} className="mt-5 space-y-3" noValidate>
+          <div className="space-y-1.5">
+            <label htmlFor="admin-password" className="text-sm font-medium">Password</label>
+            <Input
+              id="admin-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!error}
+              aria-describedby={error ? "admin-password-error" : undefined}
+            />
+            {error && (
+              <p id="admin-password-error" className="text-xs text-critical" role="alert">{error}</p>
+            )}
+          </div>
+          <Button type="submit" className="w-full" disabled={loggingIn}>
+            {loggingIn ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign in"
+            )}
+          </Button>
+        </form>
+        <p className="mt-4 text-[11px] text-subtle-foreground">Your session ends when you sign out, close this tab, or after a few hours.</p>
+      </div>
+    </div>
+  );
+}
+
+/** Re-read the stored session when this tab (custom event) or another tab (storage event) changes it. */
+function subscribeToSession(onChange: () => void) {
+  window.addEventListener(SESSION_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(SESSION_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+export default function AdminPage() {
+  // Browser storage is an external store: read it via useSyncExternalStore so
+  // the server render (null = unknown) and the client agree without an effect.
+  const isAuthenticated = useSyncExternalStore(subscribeToSession, adminService.isAuthenticated, () => null);
+  const [tab, setTab] = useState<Tab>("overview");
+
+  // A stored token can outlive its server-side session (API restart, revoked
+  // elsewhere): check once on load so the console doesn't flash stale data.
+  useEffect(() => {
+    void adminService.verifySession();
+  }, []);
+
+  // Sign out at the moment the token lapses rather than on the next failed call.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const expiresAt = adminService.sessionExpiresAt();
+    if (expiresAt === null) return;
+    // setTimeout overflows past ~24.8 days; sessions are capped at 7.
+    const timer = window.setTimeout(adminService.expireSession, Math.max(0, expiresAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated]);
+
+  // Any admin call that gets a 401 ends the session centrally; tell the user once.
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const reason = (e as CustomEvent<{ reason?: SessionEndReason }>).detail?.reason;
+      if (reason === "expired") toast.error("Session expired. Please sign in again.");
+    };
+    window.addEventListener(SESSION_EVENT, onChange);
+    return () => window.removeEventListener(SESSION_EVENT, onChange);
+  }, []);
+
+  const handleLogout = async () => {
+    await adminService.logout();
+    toast.success("Signed out");
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleUnauthorized = useCallback(() => adminService.expireSession(), []);
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File too large. Maximum size is 5MB");
-      return;
-    }
-
-    const allowedTypes = [".txt", ".pdf"];
-    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-    if (!allowedTypes.includes(ext)) {
-      toast.error("Only .txt and .pdf files are allowed");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const result = await adminService.uploadDocument(file);
-      setLastUpload(result);
-      toast.success(
-        `Uploaded ${file.name} (${result.chunks} chunks created)`
-      );
-      loadStats();
-    } catch (err) {
-      console.error(err);
-      toast.error("Upload failed");
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  if (loading) {
+  if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark:bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--ac-primary-blue)]" />
+      <div className="flex h-full items-center justify-center" aria-busy="true">
+        <Loader2 className="size-6 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark:bg-[#0a0a0a] p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-12 h-12 rounded-full bg-[var(--ac-primary-blue)]/10 flex items-center justify-center">
-              <Lock className="w-6 h-6 text-[var(--ac-primary-blue)]" />
-            </div>
-            <CardTitle>Admin Login</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
-              Enter your admin password to manage knowledge base documents
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Input
-                type="password"
-                placeholder="Admin password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full"
-              />
-              <Button
-                type="submit"
-                className="w-full bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)]"
-                disabled={loggingIn}
-              >
-                {loggingIn ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Logging in...
-                  </>
-                ) : (
-                  "Login"
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  if (!isAuthenticated) return <LoginForm />;
 
   return (
-    <div className="min-h-screen bg-background dark:bg-[#0a0a0a] p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6">
+        <header className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="eyebrow mb-1">Administration</p>
+            <h1 className="text-2xl font-semibold tracking-tight">System console</h1>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut />
+            Log out
           </Button>
+        </header>
+
+        <div role="tablist" aria-label="Admin sections" className="mb-5 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border [scrollbar-width:none]">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              id={`admin-tab-${id}`}
+              role="tab"
+              type="button"
+              aria-selected={tab === id}
+              aria-controls={`admin-panel-${id}`}
+              onClick={() => setTab(id)}
+              className={cn(
+                "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/60",
+                tab === id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {label}
+            </button>
+          ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Upload Documents
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".txt,.pdf"
-                onChange={handleUpload}
-                disabled={uploading}
-                className="hidden"
-                id="file-upload"
-              />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="w-10 h-10 text-[var(--ac-primary-blue)] animate-spin mb-4" />
-                    <p className="text-muted-foreground">Processing document...</p>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-10 h-10 text-muted-foreground mb-4" />
-                    <p className="font-medium">
-                      Click to upload a document
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      TXT or PDF, max 5MB
-                    </p>
-                  </>
-                )}
-              </label>
-            </div>
-
-            {lastUpload && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <p className="font-medium text-green-700 dark:text-green-400">
-                  Last upload: {lastUpload.filename}
-                </p>
-                <p className="text-sm text-green-600 dark:text-green-500">
-                  Created {lastUpload.chunks} chunks
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg">
-                <p className="text-sm text-muted-foreground">Total Documents</p>
-                <p className="text-3xl font-bold">
-                  {stats?.total_documents ?? 0}
-                </p>
-              </div>
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg">
-                <p className="text-sm text-muted-foreground">Index Name</p>
-                <p className="text-lg font-bold text-green-500 truncate" title={stats?.index_name}>
-                  {stats?.index_name || "N/A"}
-                </p>
-              </div>
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg">
-                <p className="text-sm text-muted-foreground">Embedding Model</p>
-                <p className="text-sm font-medium truncate" title={stats?.embedding_model}>
-                  {stats?.embedding_model || "N/A"}
-                </p>
-              </div>
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg">
-                <p className="text-sm text-muted-foreground">Dimension</p>
-                <p className="text-sm font-medium">
-                  {stats?.dimension || "N/A"}
-                </p>
-              </div>
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg">
-                <p className="text-sm text-muted-foreground">Metric</p>
-                <p className="text-sm font-medium">
-                  {stats?.metric || "N/A"}
-                </p>
-              </div>
-              <div className="p-4 bg-card dark:bg-[#1a1a1a] rounded-lg col-span-2">
-                <p className="text-sm text-muted-foreground">Endpoint</p>
-                <p className="text-xs font-mono truncate" title={stats?.endpoint}>
-                  {stats?.endpoint || "N/A"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <AgentManager />
-
-        <div className="text-center">
-          <Button
-            variant="link"
-            onClick={() => router.push("/")}
-          >
-            Back to Home
-          </Button>
+        <div role="tabpanel" id={`admin-panel-${tab}`} aria-labelledby={`admin-tab-${tab}`}>
+          {tab === "overview" && <SystemDashboard onUnauthorized={handleUnauthorized} />}
+          {tab === "knowledge" && <KnowledgeBase onUnauthorized={handleUnauthorized} />}
+          {tab === "agents" && <AgentManager />}
         </div>
       </div>
     </div>

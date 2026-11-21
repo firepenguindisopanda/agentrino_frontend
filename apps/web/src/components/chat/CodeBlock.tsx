@@ -29,7 +29,7 @@ export function CodeBlock({ children, className = '', ...props }: React.HTMLAttr
         onClick={handleCopy}
         aria-label={copied ? 'Copied' : 'Copy code'}
         title={copied ? 'Copied' : 'Copy code'}
-        className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md border border-border bg-background/80 px-2 py-1 text-xs text-muted-foreground opacity-0 backdrop-blur transition-opacity hover:text-foreground focus:opacity-100 focus-visible:ring-2 focus-visible:ring-[var(--ac-primary-blue)] group-hover:opacity-100"
+        className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-md border border-border bg-background/80 px-2 py-1 text-xs text-muted-foreground opacity-0 backdrop-blur transition-opacity hover:text-foreground focus:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60 group-hover:opacity-100"
       >
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
         {copied ? 'Copied' : 'Copy'}
