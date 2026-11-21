@@ -62,6 +62,8 @@ export function useChat() {
             content: message.content,
             role: message.role,
             timestamp: message.created_at,
+            usedRag: Boolean(message.metadata?.rag_used),
+            ragDocsCount: Number(message.metadata?.rag_docs_count ?? 0) || undefined,
           }));
 
         dispatch(setMessages(mappedMessages));

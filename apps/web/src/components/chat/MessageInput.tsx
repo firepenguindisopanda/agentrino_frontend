@@ -2,6 +2,9 @@
 import React, { useRef, type KeyboardEvent } from 'react';
 import { Send, Square } from 'lucide-react';
 
+/** Mirrors backend schemas.MAX_MESSAGE_CHARS. */
+export const MAX_MESSAGE_CHARS = 8000;
+
 interface MessageInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -20,83 +23,84 @@ export function MessageInput({
   onCancel,
   isStreaming = false,
   disabled = false,
-  placeholder = "Type your message...",
+  placeholder = 'Type your message...',
   className = '',
 }: MessageInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const canSend = value.trim().length > 0 && !disabled;
+
+  const submit = () => {
+    if (canSend) onSend(value.trim());
+  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim() && !disabled) {
-        onSend(value.trim());
-      }
-    }
-  };
-
-  const handleSend = () => {
-    if (value.trim() && !disabled) {
-      onSend(value.trim());
-    }
-  };
-
-  const handleCancel = () => {
-    onCancel?.();
-  };
-
-  const adjustTextareaHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+      submit();
     }
   };
 
   React.useEffect(() => {
-    adjustTextareaHeight();
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
   }, [value]);
 
+  const nearLimit = value.length > MAX_MESSAGE_CHARS * 0.8;
+
   return (
-    <div className={`flex-shrink-0 flex items-end gap-3 p-4 border-t border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl ${className}`}>
-      <div className="flex-1 relative">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="w-full resize-none rounded-xl border border-border dark:border-[var(--ac-input-border)] bg-background dark:bg-[var(--ac-input-bg)] px-4 py-3 text-foreground dark:text-[var(--ac-text-primary)] placeholder:text-muted-foreground dark:placeholder:[var(--ac-text-muted)] focus:border-[var(--ac-primary-blue)] dark:focus:border-[var(--ac-input-focus-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ac-primary-blue)]/20 dark:focus:ring-[var(--ac-primary-blue)]/20 disabled:opacity-50 disabled:cursor-not-allowed chat-transition input-focus min-h-[48px] max-h-[120px]"
-          rows={1}
-        />
-
-        {/* Character count indicator */}
-        {value.length > 500 && (
-          <div className="absolute -top-6 right-0 text-xs text-[var(--ac-warning)]">
-            {value.length}/2000
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2">
-        {isStreaming && onCancel && (
-          <button
-            onClick={handleCancel}
-            className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-error)] text-white hover:bg-red-500 button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            title="Cancel streaming"
-          >
-            <Square size={16} />
-          </button>
-        )}
-
-        <button
-          onClick={handleSend}
-          disabled={!value.trim() || disabled}
-          className="flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white button-hover chat-transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-          title="Send message (Enter)"
-        >
-          <Send size={16} />
-        </button>
+    <div className={`flex-shrink-0 px-4 pb-3 pt-2 sm:px-6 ${className}`}>
+      <div className="mx-auto max-w-3xl">
+        <div className="flex items-end gap-2 rounded-xl border border-input bg-card p-2 shadow-card transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
+          <label htmlFor="chat-input" className="sr-only">Message</label>
+          <textarea
+            id="chat-input"
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            maxLength={MAX_MESSAGE_CHARS}
+            rows={1}
+            className="max-h-[200px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-[15px] leading-6 text-foreground outline-none placeholder:text-subtle-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          />
+          {isStreaming && onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              aria-label="Stop generating"
+              title="Stop generating"
+              className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-foreground text-background outline-none transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring/60"
+            >
+              <Square size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={submit}
+              disabled={!canSend}
+              aria-label="Send message"
+              title="Send message (Enter)"
+              className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground outline-none transition-colors hover:bg-primary-hover focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Send size={16} />
+            </button>
+          )}
+        </div>
+        <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-subtle-foreground">
+          <span>
+            <kbd className="rounded border border-border bg-muted px-1 font-sans">Enter</kbd> to send ·{' '}
+            <kbd className="rounded border border-border bg-muted px-1 font-sans">Shift + Enter</kbd> for new line
+          </span>
+          {nearLimit && (
+            <span className="tabular text-warning" aria-live="polite">
+              {value.length.toLocaleString()} / {MAX_MESSAGE_CHARS.toLocaleString()}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

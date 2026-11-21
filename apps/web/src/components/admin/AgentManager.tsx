@@ -126,7 +126,7 @@ export function AgentManager() {
             <Button
               size="sm"
               onClick={startCreate}
-              className="bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)]"
+             
             >
               <Plus className="mr-1 h-4 w-4" /> New Agent
             </Button>
@@ -161,7 +161,7 @@ export function AgentManager() {
                 value={form.system_prompt}
                 onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
                 rows={5}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ac-primary-blue)]"
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                 placeholder="You are a helpful assistant that..."
               />
             </div>
@@ -189,7 +189,7 @@ export function AgentManager() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)]"
+               
               >
                 {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
                 {editingId ? 'Update' : 'Create'}
@@ -203,7 +203,7 @@ export function AgentManager() {
 
         {loading ? (
           <div className="flex justify-center py-6">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--ac-primary-blue)]" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : agents.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
@@ -242,7 +242,7 @@ export function AgentManager() {
                     {deletingId === agent.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Trash2 className="h-4 w-4 text-[var(--ac-error)]" />
+                      <Trash2 className="h-4 w-4 text-critical" />
                     )}
                   </Button>
                 </div>

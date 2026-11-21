@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Chatter - AI Conversations",
-  description: "Chat with specialized AI agents. Each agent has unique expertise to help you with different tasks.",
+  title: { default: "Agentrino", template: "%s · Agentrino" },
+  description: "Specialized AI agents, a strategic Oracle for technical decisions, and live system analytics.",
 };
 
 export default function RootLayout({

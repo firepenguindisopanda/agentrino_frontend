@@ -29,8 +29,8 @@ export function HealthBanner() {
       aria-live="polite"
       className={`flex items-center justify-between gap-3 px-4 py-2 text-sm ${
         isDown
-          ? 'border-b border-[var(--ac-error)]/30 bg-[var(--ac-error)]/10 text-[var(--ac-error)]'
-          : 'border-b border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+          ? 'border-b border-critical/30 bg-critical-soft text-foreground'
+          : 'border-b border-warning/30 bg-warning-soft text-foreground'
       }`}
     >
       <div className="flex min-w-0 items-center gap-2">

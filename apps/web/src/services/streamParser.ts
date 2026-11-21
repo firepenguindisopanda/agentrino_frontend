@@ -61,6 +61,19 @@ export async function parseStream(
           }
         }
 
+        if (event === 'error') {
+          // Server-side failure mid-stream: surface its (safe) message and stop.
+          let message = 'The model failed while generating a reply.';
+          try {
+            const parsed = JSON.parse(data);
+            if (typeof parsed?.error === 'string') message = parsed.error;
+          } catch {
+            // keep the default message
+          }
+          onError?.(new Error(message));
+          return;
+        }
+
         if (event === 'done') {
           let ragMetadata: RagMetadata | undefined;
           if (data) {

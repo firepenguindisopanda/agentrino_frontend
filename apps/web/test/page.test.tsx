@@ -85,7 +85,25 @@ vi.mock('lucide-react', () => ({
   Gem: ({ className }: { className?: string }) => (
     <div data-testid="gem-icon" className={className}>Gem</div>
   ),
+  Trash2: ({ className }: { className?: string }) => (
+    <div data-testid="trash-icon" className={className}>Trash</div>
+  ),
 }));
+
+function makeConversation(overrides: Partial<chatService.Conversation> = {}): chatService.Conversation {
+  const now = new Date().toISOString();
+  return {
+    id: 'conv-1',
+    agent_id: 'agent-1',
+    session_id: 'session-1',
+    title: null,
+    is_archived: false,
+    last_activity_at: now,
+    created_at: now,
+    updated_at: now,
+    ...overrides,
+  };
+}
 
 // Create a mock store factory
 const createMockStore = () => configureStore({
@@ -130,7 +148,7 @@ describe('Home Page', () => {
   });
 
   describe('Loading State', () => {
-    it('should display loading spinner while fetching agents', async () => {
+    it('should display a loading skeleton while fetching agents', async () => {
       // Delay the resolution to ensure loading state is visible
       vi.mocked(chatService.getAgents).mockImplementation(() => 
         new Promise((resolve) => setTimeout(() => resolve(mockAgents), 100))
@@ -142,9 +160,9 @@ describe('Home Page', () => {
         </Provider>
       );
 
-      // Should show loading spinner initially
-      expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
+      // Should show an accessible skeleton while loading
+      const skeleton = screen.getByLabelText('Loading agents');
+      expect(skeleton).toHaveAttribute('aria-busy', 'true');
     });
   });
 
@@ -290,7 +308,7 @@ describe('Home Page', () => {
 
   describe('Start Chat Functionality', () => {
     it('should navigate to chat page when Start Chat is clicked', async () => {
-      const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
+      const mockConversation = makeConversation({ id: 'conv-123', agent_id: 'agent-1' });
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
       vi.mocked(chatService.getOrCreateConversation).mockResolvedValue(mockConversation);
 
@@ -327,7 +345,7 @@ describe('Home Page', () => {
     });
 
     it('should show loading state when starting a chat', async () => {
-      const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
+      const mockConversation = makeConversation({ id: 'conv-123', agent_id: 'agent-1' });
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
       vi.mocked(chatService.getOrCreateConversation).mockImplementation(() =>
         new Promise((resolve) => setTimeout(() => resolve(mockConversation), 100))
@@ -360,7 +378,7 @@ describe('Home Page', () => {
     });
 
     it('should disable all Start Chat buttons while one is loading', async () => {
-      const mockConversation = { id: 'conv-123', agent_id: 'agent-1', title: null };
+      const mockConversation = makeConversation({ id: 'conv-123', agent_id: 'agent-1' });
       vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
       vi.mocked(chatService.getOrCreateConversation).mockImplementation(() =>
         new Promise((resolve) => setTimeout(() => resolve(mockConversation), 100))
@@ -537,6 +555,74 @@ describe('Home Page', () => {
 
       await waitFor(() => {
         expect(screen.getByText('No Color Agent')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Conversation limit and management', () => {
+    const tenConversations = Array.from({ length: 10 }, (_, i) =>
+      makeConversation({ id: `c${i}`, agent_id: `other-${i}`, title: `Chat ${i}` })
+    );
+
+    it('disables starting a new chat once the active limit is reached', async () => {
+      vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
+      vi.mocked(chatService.listConversations).mockResolvedValue(tenConversations);
+
+      render(
+        <Provider store={createMockStore()}>
+          <Home />
+        </Provider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getAllByText('Limit Reached').length).toBe(3);
+      });
+      screen
+        .getAllByTestId('button')
+        .filter((b) => b.textContent?.includes('Limit Reached'))
+        .forEach((b) => expect(b).toBeDisabled());
+      expect(chatService.getOrCreateConversation).not.toHaveBeenCalled();
+      expect(screen.getByRole('meter', { name: 'Active chats used' })).toHaveAttribute('aria-valuenow', '10');
+    });
+
+    it('still lets the user continue an existing chat at the limit', async () => {
+      vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
+      vi.mocked(chatService.listConversations).mockResolvedValue([
+        ...tenConversations.slice(0, 9),
+        makeConversation({ id: 'mine', agent_id: 'agent-1' }),
+      ]);
+
+      render(
+        <Provider store={createMockStore()}>
+          <Home />
+        </Provider>
+      );
+
+      const cont = await screen.findByText('Continue Chat');
+      expect(cont.closest('button')).not.toBeDisabled();
+    });
+
+    it('requires confirmation before deleting a chat', async () => {
+      vi.mocked(chatService.getAgents).mockResolvedValue(mockAgents);
+      vi.mocked(chatService.listConversations).mockResolvedValue([
+        makeConversation({ id: 'archived-1', title: 'Old chat', is_archived: true }),
+      ]);
+
+      render(
+        <Provider store={createMockStore()}>
+          <Home />
+        </Provider>
+      );
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Delete chat Old chat' }));
+      expect(chatService.deleteConversation).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+      await waitFor(() => {
+        expect(chatService.deleteConversation).toHaveBeenCalledWith('archived-1');
+      });
+      await waitFor(() => {
+        expect(screen.queryByText(/Old chat/)).not.toBeInTheDocument();
       });
     });
   });

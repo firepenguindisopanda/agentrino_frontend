@@ -10,15 +10,15 @@ interface StreamingMessageProps {
 
 export function StreamingMessage({ message, className = '' }: StreamingMessageProps) {
   const { displayedText, isTyping } = useStreamingText(message.content, {
-    typingSpeed: 1, // Faster typing speed
+    typingSpeed: 1,
   });
 
   return (
-    <div className={`message-enter streaming-text ${className}`}>
+    <div className={`streaming-text ${className}`} aria-live="polite" aria-busy={isTyping}>
       <div className="whitespace-pre-wrap break-words">
         {displayedText}
         {isTyping && (
-          <span className="inline-block w-2 h-4 bg-cogniflow-electric-cyan ml-1 animate-pulse"></span>
+          <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-pulse bg-primary" aria-hidden="true" />
         )}
       </div>
     </div>

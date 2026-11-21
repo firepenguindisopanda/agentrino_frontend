@@ -1,15 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { getAgents, getOrCreateConversation, listConversations, deleteConversation, type Agent, type Conversation } from '@/services/chatService';
+import {
+  getAgents,
+  getOrCreateConversation,
+  listConversations,
+  deleteConversation,
+  type Agent,
+  type Conversation,
+} from '@/services/chatService';
 import { getSessionId } from '@/lib/session';
-import { Loader2, MessageSquare, ArrowRight, Bot, Trash2, FolderOpen, Gem } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { formatRelativeTime } from '@/lib/format';
+import { Bot, Gem, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StatTile } from '@/components/analytics/StatTile';
+import { Meter } from '@/components/analytics/Meter';
+import { AgentCard } from '@/components/home/AgentCard';
+import { ConversationPanel } from '@/components/home/ConversationPanel';
 
 const MAX_CONVERSATIONS = 10;
+
+function HomeSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6" aria-busy="true" aria-label="Loading agents">
+      <div className="mb-8 h-9 w-72 animate-pulse rounded-md bg-muted" />
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-52 animate-pulse rounded-xl bg-muted" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
@@ -18,14 +47,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingChat, setStartingChat] = useState<string | null>(null);
-  const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [query, setQuery] = useState('');
+  const chatsRef = useRef<HTMLElement>(null);
 
   const loadData = async () => {
+    setError(null);
     try {
       const sessionId = getSessionId();
       const [agentsData, conversationsData] = await Promise.all([
@@ -33,7 +60,7 @@ export default function Home() {
         listConversations(sessionId, true),
       ]);
       setAgents(agentsData);
-      setConversations(conversationsData);
+      setConversations(conversationsData ?? []);
     } catch (err) {
       console.error(err);
       setError('Failed to load data. Is the backend running?');
@@ -42,18 +69,19 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
   const handleStartChat = async (agent: Agent) => {
     try {
       setStartingChat(agent.id);
-      const sessionId = getSessionId();
-      const conversation = await getOrCreateConversation(agent.id, sessionId);
+      const conversation = await getOrCreateConversation(agent.id, getSessionId());
       router.push(`/chat?conversationId=${conversation.id}&agentId=${agent.id}&agentName=${encodeURIComponent(agent.name)}`);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to start chat';
-      toast.error(errorMessage);
-      if (errorMessage.includes('Maximum')) {
-        setManageDialogOpen(true);
-      }
+      const message = err instanceof Error ? err.message : 'Failed to start chat';
+      toast.error(message);
+      if (message.includes('Maximum')) chatsRef.current?.focus();
     } finally {
       setStartingChat(null);
     }
@@ -64,7 +92,7 @@ export default function Home() {
       setDeletingId(conversationId);
       await deleteConversation(conversationId);
       setConversations((prev) => prev.filter((c) => c.id !== conversationId));
-      toast.success('Chat deleted successfully');
+      toast.success('Chat deleted');
     } catch (err) {
       console.error(err);
       toast.error('Failed to delete chat');
@@ -73,32 +101,32 @@ export default function Home() {
     }
   };
 
-  const getConversationForAgent = (agentId: string) => {
-    return conversations.find((c) => c.agent_id === agentId && !c.is_archived);
-  };
+  const visibleAgents = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return agents
+      .filter((a) => a.name !== 'Oracle')
+      .filter((a) => !q || a.name.toLowerCase().includes(q) || (a.description ?? '').toLowerCase().includes(q));
+  }, [agents, query]);
 
-  const activeCount = conversations.filter((c) => !c.is_archived).length;
+  const active = conversations.filter((c) => !c.is_archived);
+  const activeCount = active.length;
   const isAtLimit = activeCount >= MAX_CONVERSATIONS;
+  const lastActivity = active
+    .map((c) => c.last_activity_at)
+    .sort()
+    .at(-1);
+  const selectableAgentCount = agents.filter((a) => a.name !== 'Oracle').length;
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-background dark:bg-[var(--ac-dark-bg)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[var(--ac-primary-blue)] rounded-full blur-xl opacity-50 animate-pulse" />
-            <Loader2 className="w-12 h-12 text-[var(--ac-primary-blue)] animate-spin relative" />
-          </div>
-          <span className="text-[var(--ac-text-secondary)] text-sm dark:text-[var(--ac-text-secondary)]">Loading agents...</span>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <HomeSkeleton />;
 
   if (error) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-background dark:bg-[var(--ac-dark-bg)] p-4">
-        <div className="text-xl text-[var(--ac-error)] mb-4">{error}</div>
-        <Button onClick={loadData} variant="outline" className="border-[var(--ac-primary-blue)] text-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-blue)]/10">
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center" role="alert">
+        <p className="text-base font-medium text-critical">{error}</p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          The server may be waking up from a cold start, which can take up to a minute.
+        </p>
+        <Button onClick={loadData} variant="outline">
           Retry
         </Button>
       </div>
@@ -106,209 +134,104 @@ export default function Home() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-background dark:bg-[var(--ac-dark-bg)]">
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 pb-20">
-        {/* Hero Section */}
-        <header className="text-center mb-16 pt-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border dark:bg-[var(--ac-card-bg)] dark:border-[var(--ac-border-color)] mb-6">
-            <Bot className="w-4 h-4 text-[var(--ac-primary-blue)]" />
-            <span className="text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)]">Powered by AI</span>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-            <span className="text-foreground dark:text-[var(--ac-text-primary)]">
-              Choose Your
-            </span>
-            <br />
-            <span className="text-[var(--ac-primary-blue)]">
-              AI Agent
-            </span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground dark:text-[var(--ac-text-secondary)] max-w-2xl mx-auto leading-relaxed">
-            Each agent specializes in different areas. Select one to start a conversation
-            tailored to your needs.
-          </p>
-
-          {/* Oracle CTA */}
-          <div className="mt-10">
-            <Button
-              onClick={() => router.push('/oracle')}
-              className="relative overflow-hidden bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white font-semibold px-8 py-6 rounded-xl shadow-lg shadow-[var(--ac-primary-blue)]/25 transition-all duration-300 hover:shadow-[var(--ac-primary-blue)]/40"
-            >
-              <span className="relative z-10 flex items-center gap-3">
-                <Gem className="w-5 h-5" />
-                Consult Oracle
-              </span>
-            </Button>
-            <p className="mt-3 text-sm text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-              Get comparative analysis for architecture decisions
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pt-10">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow mb-2">Workspace</p>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Choose your <span className="text-primary-ink">AI Agent</span>
+            </h1>
+            <p className="mt-2 max-w-xl text-[15px] text-muted-foreground">
+              Each agent specializes in a different area. Pick one to start a focused conversation, or ask the
+              Oracle to compare approaches for a technical decision.
             </p>
           </div>
+          <Button variant="outline" size="lg" onClick={() => router.push('/oracle')} className="shrink-0">
+            <Gem className="text-primary-ink" />
+            Consult Oracle
+          </Button>
         </header>
 
-        {/* Manage Chats Button */}
-        {conversations.length > 0 && (
-          <div className="flex justify-center mb-8">
-            <Button
-              variant="outline"
-              className="border-[var(--ac-border-color)] dark:border-[var(--ac-border-color)]"
-              onClick={() => setManageDialogOpen(true)}
-            >
-              <FolderOpen className="w-4 h-4 mr-2" />
-              Manage Chats ({activeCount}/{MAX_CONVERSATIONS})
-            </Button>
-          </div>
-        )}
+        <section aria-label="Workspace summary" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <StatTile label="Agents available" value={selectableAgentCount} icon={<Bot />} hint="Plus the Oracle advisor" />
+          <StatTile
+            label="Active chats"
+            value={
+              <>
+                {activeCount}
+                <span className="text-base font-normal text-muted-foreground"> / {MAX_CONVERSATIONS}</span>
+              </>
+            }
+            icon={<MessageSquare />}
+            tone={isAtLimit ? 'critical' : activeCount >= MAX_CONVERSATIONS * 0.8 ? 'warning' : 'neutral'}
+            hint={isAtLimit ? 'Limit reached: delete a chat to start a new one' : `${MAX_CONVERSATIONS - activeCount} slots left`}
+          >
+            <Meter value={activeCount} max={MAX_CONVERSATIONS} label="Active chats used" className="mt-1" />
+          </StatTile>
+          <StatTile
+            className="col-span-2 sm:col-span-1"
+            label="Last activity"
+            value={lastActivity ? formatRelativeTime(lastActivity) : '—'}
+            hint={lastActivity ? new Date(lastActivity).toLocaleString() : 'No conversations yet'}
+          />
+        </section>
 
-        {/* Manage Chats Modal */}
-        {manageDialogOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setManageDialogOpen(false)}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section aria-labelledby="agents-heading">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 id="agents-heading" className="text-sm font-semibold">Agents</h2>
+              {selectableAgentCount > 3 && (
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Filter agents…"
+                  aria-label="Filter agents"
+                  className="h-8 w-48 rounded-md border border-input bg-card px-2.5 text-sm shadow-xs outline-none placeholder:text-subtle-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                />
+              )}
+            </div>
+
+            {agents.length === 0 ? (
+              <div className="surface flex flex-col items-center px-6 py-16 text-center">
+                <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
+                  <Bot className="size-6 text-muted-foreground" />
+                </span>
+                <h3 className="mb-1 text-base font-semibold">No Agents Available</h3>
+                <p className="text-sm text-muted-foreground">Check back later or contact support.</p>
+              </div>
+            ) : visibleAgents.length === 0 ? (
+              <p className="surface px-6 py-10 text-center text-sm text-muted-foreground">
+                No agents match “{query}”.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {visibleAgents.map((agent) => (
+                  <AgentCard
+                    key={agent.id}
+                    agent={agent}
+                    hasConversation={active.some((c) => c.agent_id === agent.id)}
+                    isStarting={startingChat === agent.id}
+                    anyStarting={startingChat !== null}
+                    atLimit={isAtLimit}
+                    onStart={handleStartChat}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <ConversationPanel
+              ref={chatsRef}
+              conversations={conversations}
+              agents={agents}
+              deletingId={deletingId}
+              onDelete={handleDeleteConversation}
             />
-            <div className="relative z-10 w-full max-w-[500px] bg-background dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)] rounded-lg shadow-lg p-6">
-              <div className="flex flex-col space-y-1.5 text-center sm:text-left mb-4">
-                <h2 className="text-lg font-semibold leading-none tracking-tight">Manage Your Chats</h2>
-                <p className="text-sm text-muted-foreground">
-                  You have {activeCount} active chat{activeCount !== 1 ? 's' : ''}. Delete old chats to start new ones.
-                </p>
-              </div>
-              <div className="max-h-[400px] overflow-y-auto space-y-2">
-                {conversations.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No chats yet</p>
-                ) : (
-                  conversations.map((conv) => {
-                    const agent = agents.find((a) => a.id === conv.agent_id);
-                    return (
-                      <div
-                        key={conv.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-card dark:bg-[var(--ac-card-bg)] border border-border dark:border-[var(--ac-border-color)]"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {conv.title || agent?.name || 'Unknown Agent'}
-                            {conv.is_archived && <span className="text-muted-foreground text-sm ml-2">(Archived)</span>}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {agent?.name || 'Unknown Agent'} &middot; {new Date(conv.last_activity_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteConversation(conv.id)}
-                          disabled={deletingId === conv.id}
-                          className="text-muted-foreground hover:text-[var(--ac-error)]"
-                        >
-                          {deletingId === conv.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              <div className="mt-4 flex justify-end">
-                <Button variant="outline" onClick={() => setManageDialogOpen(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Agent Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {agents.filter((a) => a.name !== 'Oracle').map((agent, index) => {
-            const existingConv = getConversationForAgent(agent.id);
-            return (
-              <Card
-                key={agent.id}
-                className="group relative bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl border-border dark:border-[var(--ac-border-color)] hover:border-[var(--ac-primary-blue)] dark:hover:border-[var(--ac-primary-blue)] transition-all duration-300 hover:shadow-xl dark:hover:shadow-[var(--ac-primary-blue)]/20 overflow-hidden cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => handleStartChat(agent)}
-              >
-                {/* Hover Glow - dark mode only */}
-                <div className="absolute inset-0 bg-[var(--ac-primary-blue)]/0 dark:group-hover:bg-[var(--ac-primary-blue)]/5 transition-all duration-300" />
-
-                <CardHeader className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    {/* Agent Avatar */}
-                    <div className="relative">
-                      {/* Icon container without glow overlay */}
-                      <div
-                        className="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                        style={{ backgroundColor: agent.color || '#2563eb' }}
-                      >
-                        <Bot className="w-7 h-7 text-white" />
-                      </div>
-                    </div>
-
-                    <MessageSquare className="w-5 h-5 text-muted-foreground dark:text-[var(--ac-text-secondary)] group-hover:text-[var(--ac-primary-blue)] transition-colors duration-300" />
-                  </div>
-
-                  <CardTitle className="text-2xl font-bold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2 group-hover:text-[var(--ac-primary-blue)] transition-colors">
-                    {agent.name}
-                  </CardTitle>
-
-                  <CardDescription className="text-muted-foreground dark:text-[var(--ac-text-secondary)] line-clamp-3 leading-relaxed">
-                    {agent.description || 'Ready to assist you with specialized knowledge and expertise.'}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardFooter className="relative pt-0">
-                  <Button
-                    className="w-full relative overflow-hidden bg-[var(--ac-primary-blue)] hover:bg-[var(--ac-primary-hover)] text-white font-semibold shadow-lg transition-all duration-300 group/btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartChat(agent);
-                    }}
-                    disabled={startingChat !== null}
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      {startingChat === agent.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Starting...
-                        </>
-                      ) : existingConv ? (
-                        <>
-                          Continue Chat
-                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                        </>
-                      ) : isAtLimit ? (
-                        <>
-                          Limit Reached
-                        </>
-                      ) : (
-                        <>
-                          Start Chat
-                          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </span>
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+          </aside>
         </div>
-
-        {/* Empty State */}
-        {agents.length === 0 && (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-card border border-border dark:bg-[var(--ac-card-bg)] dark:border-[var(--ac-border-color)] mb-6">
-              <Bot className="w-10 h-10 text-muted-foreground dark:text-[var(--ac-text-secondary)]" />
-            </div>
-            <h3 className="text-xl font-semibold text-card-foreground dark:text-[var(--ac-text-primary)] mb-2">No Agents Available</h3>
-            <p className="text-muted-foreground dark:text-[var(--ac-text-secondary)]">Check back later or contact support.</p>
-          </div>
-        )}
       </div>
     </div>
   );

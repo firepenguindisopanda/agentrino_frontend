@@ -1,15 +1,29 @@
 'use client';
 import React, { useEffect } from 'react';
+import Link from 'next/link';
+import { useSelector } from 'react-redux';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { useChat } from '@/components/hooks/useChat';
-import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
-import { AlertCircle, Wifi, WifiOff, Loader2, Bot, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, Bot, Trash2 } from 'lucide-react';
 
 interface ChatContainerProps {
   className?: string;
 }
+
+const STATUS: Record<string, { label: string; dot: string }> = {
+  connected: { label: 'Connected', dot: 'bg-good' },
+  connecting: { label: 'Connecting...', dot: 'bg-warning' },
+  error: { label: 'Error', dot: 'bg-critical' },
+  disconnected: { label: 'Offline', dot: 'bg-subtle-foreground' },
+};
+
+const SUGGESTIONS = [
+  'What can you help me with?',
+  'Give me a step-by-step plan for my next task',
+  'Explain this concept simply, then in depth',
+];
 
 export function ChatContainer({ className = '' }: ChatContainerProps) {
   const {
@@ -26,97 +40,84 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
   } = useChat();
 
   const { isLoading } = useSelector((state: RootState) => state.ui);
+  const status = STATUS[connectionStatus] ?? STATUS.disconnected;
 
   useEffect(() => {
-    const input = document.querySelector('textarea') as HTMLTextAreaElement;
-    input?.focus();
+    document.getElementById('chat-input')?.focus();
   }, []);
 
-  const getConnectionIcon = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return <Wifi size={14} className="text-[var(--ac-connected)]" />;
-      case 'connecting':
-        return <Loader2 size={14} className="text-[var(--ac-connecting)] animate-spin" />;
-      case 'error':
-        return <AlertCircle size={14} className="text-[var(--ac-error)]" />;
-      default:
-        return <WifiOff size={14} className="text-[var(--ac-disconnected)]" />;
-    }
-  };
-
-  const getConnectionText = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'connecting':
-        return 'Connecting...';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Offline';
-    }
+  const applySuggestion = (text: string) => {
+    setInputValue(text);
+    document.getElementById('chat-input')?.focus();
   };
 
   return (
-    <div className={`flex flex-col h-full bg-card dark:bg-[var(--ac-card-bg)] rounded-2xl border border-border dark:border-[var(--ac-border-color)] overflow-hidden shadow-xl dark:shadow-2xl ${className}`}>
-      {/* Chat Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border dark:border-[var(--ac-border-color)] bg-card dark:bg-[var(--ac-card-bg)] backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="relative bg-[var(--ac-primary-blue)] p-2 rounded-xl">
-              <Bot className="w-5 h-5 text-white" />
+    <div className={`flex h-full flex-col overflow-hidden ${className}`}>
+      <div className="flex-shrink-0 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/"
+              className="hidden rounded-md px-1.5 py-1 text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 sm:inline"
+            >
+              Agents
+            </Link>
+            <span className="hidden text-border-strong sm:inline" aria-hidden="true">
+              /
+            </span>
+            <span
+              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+              aria-hidden="true"
+            >
+              <Bot className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold leading-tight">{agentName || 'AI Agent'}</h2>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" role="status">
+                {connectionStatus === 'connecting' ? (
+                  <Loader2 size={10} className="animate-spin text-warning" />
+                ) : (
+                  <span className={`size-1.5 rounded-full ${status.dot}`} aria-hidden="true" />
+                )}
+                <span>{status.label}</span>
+              </div>
             </div>
           </div>
-          <div className="relative dark:hidden">
-            <div className="relative bg-[var(--ac-primary-blue)] p-2 rounded-xl">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-card-foreground dark:text-[var(--ac-text-primary)]">
-              {agentName || 'AI Agent'}
-            </h2>
-            <div className="flex items-center gap-1.5 text-xs">
-              {getConnectionIcon()}
-              <span className="text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-                {getConnectionText()}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {messages.length > 0 && (
-          <button
-            onClick={clearChat}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)] hover:text-[var(--ac-error)] bg-muted dark:bg-[var(--ac-input-bg)] hover:bg-[var(--ac-error)]/10 rounded-lg border border-border dark:border-[var(--ac-input-border)] hover:border-[var(--ac-error)]/30 transition-all duration-200"
-          >
-            <Trash2 size={12} />
-            Clear
-          </button>
-        )}
+          {messages.length > 0 && (
+            <button
+              type="button"
+              onClick={clearChat}
+              title="Clear this view. Saved history reloads on your next visit."
+              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+            >
+              <Trash2 size={12} />
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Error Banner */}
       {error && (
-        <div className="bg-[var(--ac-error)]/10 border-l-4 border-[var(--ac-error)] px-4 py-3 mx-4 mt-4 rounded-r-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={16} className="text-[var(--ac-error)]" />
-            <span className="text-sm text-card-foreground dark:text-[var(--ac-text-primary)]">
-              {error}
-            </span>
+        <div className="mx-auto mt-3 w-full max-w-3xl px-4 sm:px-6">
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-lg border border-critical/30 bg-critical-soft px-3 py-2.5 text-sm text-foreground"
+          >
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-critical" />
+            <span>{error}</span>
           </div>
         </div>
       )}
 
-      {/* Messages Area */}
       <MessageList
         messages={messages}
         isStreaming={isStreaming}
-        className="flex-1"
+        agentName={agentName}
+        suggestions={SUGGESTIONS}
+        onSuggestion={applySuggestion}
       />
 
-      {/* Input Area */}
       <MessageInput
         value={inputValue}
         onChange={setInputValue}
@@ -124,15 +125,8 @@ export function ChatContainer({ className = '' }: ChatContainerProps) {
         onCancel={cancelStreaming}
         isStreaming={isStreaming}
         disabled={isLoading}
-        placeholder={isStreaming ? "AI is thinking..." : `Message ${agentName || 'AI Agent'}...`}
+        placeholder={isStreaming ? 'AI is thinking...' : `Message ${agentName || 'AI Agent'}...`}
       />
-
-      {/* Footer */}
-      <div className="flex-shrink-0 px-5 py-2.5 bg-card dark:bg-[var(--ac-card-bg)] border-t border-border dark:border-[var(--ac-border-color)]">
-        <div className="flex items-center justify-center text-xs text-muted-foreground dark:text-[var(--ac-text-secondary)]">
-          <span className="opacity-60">Press <kbd className="px-1.5 py-0.5 bg-muted dark:bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-muted dark:bg-[var(--ac-input-bg)] rounded text-[10px] mx-1">Shift + Enter</kbd> for new line</span>
-        </div>
-      </div>
     </div>
   );
 }
