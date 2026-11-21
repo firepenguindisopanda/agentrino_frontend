@@ -1,0 +1,31 @@
+/* Markdown code-block styling, paired with rehype-highlight + the github-dark
+   highlight.js theme imported in layout.tsx. */
+
+.prose pre.code-block {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.prose pre.code-block code,
+.prose pre.code-block code.hljs {
+  display: block;
+  overflow-x: auto;
+  /* extra top padding leaves room for the hover copy button */
+  padding: 2.25rem 1rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  background: #0d1117;
+}
+
+/* Inline code (not inside a code block) */
+.prose :not(pre) > code {
+  background: var(--muted);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.3rem;
+  font-size: 0.85em;
+  font-weight: 500;
+}

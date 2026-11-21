@@ -86,6 +86,12 @@ vi.mock('lucide-react', () => ({
   Trash2: ({ size: _size }: { size?: number }) => (
     <div data-testid="trash-icon">Trash</div>
   ),
+  Copy: ({ className }: { className?: string }) => (
+    <div data-testid="copy-icon" className={className}>Copy</div>
+  ),
+  Check: ({ className }: { className?: string }) => (
+    <div data-testid="check-icon" className={className}>Check</div>
+  ),
 }));
 
 // Create a mock store factory

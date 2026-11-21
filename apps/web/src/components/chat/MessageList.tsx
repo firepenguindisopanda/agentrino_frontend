@@ -3,8 +3,11 @@ import React, { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import rehypeHighlight from 'rehype-highlight';
 import { StreamingMessage } from './StreamingMessage';
 import { TypingIndicator } from './TypingIndicator';
+import { CodeBlock } from './CodeBlock';
+import { CopyButton } from './CopyButton';
 import { Bot, User, Gem, BookOpen } from 'lucide-react';
 import type { ChatMessage } from '@/store/slices/chatSlice';
 
@@ -68,7 +71,11 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
                 <StreamingMessage message={message} />
               ) : (
                 <div className="message-enter prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+                    components={{ pre: CodeBlock }}
+                  >
                     {message.content}
                   </ReactMarkdown>
                 </div>
@@ -79,6 +86,9 @@ export function MessageList({ messages, isStreaming, className = '' }: MessageLi
                     <BookOpen className="w-3 h-3" />
                     <span>{message.ragDocsCount} docs</span>
                   </div>
+                )}
+                {message.role === 'assistant' && !message.isStreaming && message.content && (
+                  <CopyButton text={message.content} />
                 )}
                 <div className="text-[10px] text-muted-foreground dark:text-[var(--ac-text-muted)] opacity-60">
                   {new Date(message.timestamp).toLocaleTimeString([], {
