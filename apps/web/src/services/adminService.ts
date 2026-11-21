@@ -1,6 +1,23 @@
 import { apiClient } from "./apiConfig";
+import type { Agent } from "./chatService";
 
 const ADMIN_KEY = "admin_password";
+
+export interface AgentInput {
+  name: string;
+  system_prompt: string;
+  description?: string | null;
+  color?: string | null;
+  icon?: string | null;
+}
+
+function adminHeaders() {
+  const password = localStorage.getItem(ADMIN_KEY);
+  if (!password) {
+    throw new Error("Not authenticated");
+  }
+  return { "X-Admin-Password": password };
+}
 
 export interface UploadResponse {
   filename: string;
@@ -90,5 +107,26 @@ export const adminService = {
       }
     );
     return response.data;
+  },
+
+  createAgent: async (data: AgentInput): Promise<Agent> => {
+    const response = await apiClient.post<Agent>("/agents", data, {
+      headers: adminHeaders(),
+    });
+    return response.data;
+  },
+
+  updateAgent: async (id: string, data: Partial<AgentInput>): Promise<Agent> => {
+    const response = await apiClient.patch<Agent>(`/agents/${id}`, data, {
+      headers: adminHeaders(),
+    });
+    return response.data;
+  },
+
+  deleteAgent: async (id: string): Promise<boolean> => {
+    const response = await apiClient.delete<{ deleted: boolean }>(`/agents/${id}`, {
+      headers: adminHeaders(),
+    });
+    return response.data.deleted;
   },
 };

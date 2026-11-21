@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AgentManager } from "@/components/admin/AgentManager";
 import { Loader2, Upload, FileText, Trash2, Lock } from "lucide-react";
 
 export default function AdminPage() {
@@ -164,7 +165,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background dark:bg-[#0a0a0a] p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Knowledge Base Admin</h1>
+          <h1 className="text-2xl font-bold">Admin</h1>
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>
@@ -269,6 +270,8 @@ export default function AdminPage() {
             </div>
           </CardContent>
         </Card>
+
+        <AgentManager />
 
         <div className="text-center">
           <Button
